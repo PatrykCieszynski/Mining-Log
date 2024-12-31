@@ -2,6 +2,7 @@ import pygetwindow as gw
 import numpy as np
 from mss import mss
 import cv2
+
 def get_game_window(window_name):
     windows = gw.getWindowsWithTitle(window_name)
     if windows:
