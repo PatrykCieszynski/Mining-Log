@@ -3,10 +3,10 @@ import sys
 
 from PyQt5.QtWidgets import QApplication
 
-from Modules.Map.create_map_window import MapWindow
+from Modules.Map.map_window import MapWindow
 
 # Load planet configurations from JSON file
-with open('PlanetData.json', 'r') as f:
+with open('planet_data.json', 'r') as f:
     planet_configs = json.load(f)
 
 # Uruchomienie aplikacji

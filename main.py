@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 from Modules.Capture.capture_screen import get_game_window, capture_screen
-from Modules.Map.create_map_window import stitch_map_fragments, center_map_on_coordinates
+from Modules.Map.map_window import stitch_map_fragments, center_map_on_coordinates
 from Modules.OCR.ocr import extract_coordinates_from_radar
 
 def main():

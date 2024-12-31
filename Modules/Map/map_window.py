@@ -5,7 +5,7 @@ from PIL import Image
 import os
 import glob
 
-from Modules.Map.MapView import MapView
+from Modules.Map.map_view import MapView
 
 TILE_SIZE = 512  # Tile size is always 512 px
 
@@ -15,6 +15,9 @@ class MapWindow(QMainWindow):
         self.config = config
         self.setWindowTitle("Mapa Interaktywna")
         self.setGeometry(100, 100, 800, 600)
+
+        # Set window flags to keep the window always on top
+        self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
 
         # Scena i widok
         self.scene = QGraphicsScene()
