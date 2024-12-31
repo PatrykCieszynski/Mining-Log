@@ -31,20 +31,19 @@ class MapWindow(QMainWindow):
 
         # Pozycja gracza
         self.player_position = QGraphicsEllipseItem(0, 0, 1, 1)
-        self.player_position.setBrush(Qt.red)  # Kolor punktu gracza
+        self.player_position.setBrush(Qt.red)
         self.scene.addItem(self.player_position)
 
         # Zoom
         self.view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.view.setDragMode(QGraphicsView.ScrollHandDrag)
-        self.zoom_factor = 1.15  # Współczynnik zoomu
+        self.zoom_factor = 1.15
 
         # Ukrycie pasków przewijania
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
     def load_map_tiles(self, tile_folder):
-        """Ładowanie kafelków mapy z plików DDS."""
         for y in range(self.config["tile_count_y"]):
             for x in range(self.config["tile_count_x"]):
                 tile_index = y * self.config['tile_count_x'] + x
@@ -54,21 +53,20 @@ class MapWindow(QMainWindow):
                 if tile_files:
                     tile_path = tile_files[0]  # Use the first match
                     try:
-                        # Wczytanie pliku DDS za pomocą Pillow
-                        image = Image.open(tile_path).convert("RGBA")  # Konwersja do RGBA
-                        data = image.tobytes("raw", "RGBA")  # Dane w formacie RAW
+                        image = Image.open(tile_path)
 
-                        # Utworzenie QImage na podstawie danych z Pillow
+                        data = image.tobytes()
                         qt_image = QImage(data, image.width, image.height, QImage.Format_RGBA8888)
-                        pixmap = QPixmap.fromImage(qt_image)
 
-                        # Obliczenie pozycji kafelka na mapie
                         tile_x = x * TILE_SIZE
                         tile_y = y * TILE_SIZE
 
-                        # Dodanie kafelka do sceny
-                        tile_item = QGraphicsPixmapItem(pixmap)
+                        tile_item = QGraphicsPixmapItem(QPixmap.fromImage(qt_image))
                         tile_item.setPos(tile_x, tile_y)
+
+                        # Ustawienie interpolacji podczas rysowania na scenie
+                        tile_item.setTransformationMode(Qt.SmoothTransformation)
+
                         self.scene.addItem(tile_item)
                     except Exception as e:
                         print(f"Nie udało się załadować pliku {tile_path}: {e}")
@@ -76,7 +74,6 @@ class MapWindow(QMainWindow):
                     print(f"Plik nie istnieje: {tile_pattern}")
 
     def update_player_position(self, lon, lat):
-        """Aktualizacja pozycji gracza na mapie na podstawie współrzędnych Lon/Lat."""
         # Skalowanie współrzędnych na piksele mapy
         map_width = self.config["tile_count_x"] * TILE_SIZE
         map_height = self.config["tile_count_y"] * TILE_SIZE

@@ -18,7 +18,6 @@ class MapView(QGraphicsView):
         self.coordinates_label.setText("Koordynaty: ")
 
     def wheelEvent(self, event):
-        """Obsługa kółka myszy dla zoomu."""
         # Sprawdzenie kierunku scrolla (zoom in lub zoom out)
         if event.angleDelta().y() > 0:  # Scroll w górę - zoom in
             self.scale(self.zoom_factor, self.zoom_factor)
@@ -27,7 +26,6 @@ class MapView(QGraphicsView):
         event.accept()  # Zablokowanie standardowego zachowania scrolla
 
     def mouseMoveEvent(self, event):
-        """Obsługa ruchu myszy na widoku."""
         # Pobranie pozycji kursora względem sceny
         cursor_pos = self.mapToScene(event.pos())
 
