@@ -11,7 +11,7 @@ from Modules.Capture.capture_screen import get_game_window, capture_screen
 from Modules.OCR.ocr import detect_coords_from_radar, extract_lon_lat, detect_radar_from_game
 
 # Load planet configurations from JSON file
-with open('planet_data.json', 'r') as f:
+with open('config/planet_data.json', 'r') as f:
     planet_configs = json.load(f)
 
 
@@ -34,8 +34,8 @@ class OCRWorker(QObject):
 
 def main():
     window_name = "Entropia Universe Client"
-    radar_template_path = "Assets/radar_template.png"
-    coords_template_path = "Assets/coords_template.png"
+    radar_template_path = "assets/radar_template.png"
+    coords_template_path = "assets/coords_template.png"
 
     selected_planet = "Arkadia"  # Change this to select a different planet
     config = planet_configs[selected_planet]
@@ -54,7 +54,6 @@ def main():
         radar_top_left, radar_bottom_right, scale = detect_radar_from_game(capture, radar_template_path)
 
         coords_top_left, coords_bottom_right = detect_coords_from_radar(capture, coords_template_path, radar_top_left, radar_bottom_right, scale, True)
-        print(f"Współrzędne znalezione: {coords_top_left}, {coords_bottom_right}")
 
         coords_top_left = (coords_top_left[0] + radar_top_left[0], coords_top_left[1] + radar_top_left[1])
         coords_bottom_right = (coords_bottom_right[0] + radar_top_left[0], coords_bottom_right[1] + radar_top_left[1])
@@ -67,7 +66,7 @@ def main():
         sys.exit(app.exec_())
 
     except Exception as e:
-        print(f"Błąd: {e}")
+        print(f"Error: {e}")
 
 
 if __name__ == "__main__":

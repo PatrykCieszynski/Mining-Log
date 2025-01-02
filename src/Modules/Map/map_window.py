@@ -5,7 +5,7 @@ from PIL import Image
 import os
 import glob
 
-from Modules.Map.map_view import MapView
+from src.Modules.Map.map_view import MapView
 
 TILE_SIZE = 512  # Tile size is always 512 px
 
@@ -13,26 +13,26 @@ class MapWindow(QMainWindow):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        self.setWindowTitle("Mapa Interaktywna")
+        self.setWindowTitle("Interactive Map")
         self.setGeometry(100, 100, 800, 600)
 
         # Set window flags to keep the window always on top
         self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
 
-        # Scena i widok
+        # Scene and view
         self.scene = QGraphicsScene()
         self.view = MapView(self.scene, self, config)
         self.view.setGeometry(0, 0, 800, 600)
         self.view.setRenderHint(QPainter.Antialiasing)
         self.setCentralWidget(self.view)
 
-        # Ładowanie mapy z plików .dds
+        # Load map tiles
         self.load_map_tiles(config["tile_folder"])
 
-        # Ustawienie koloru tła
+        # Set background color
         self.scene.setBackgroundBrush(QColor("#1a2f44"))
 
-        # Pozycja gracza
+        # Player position
         self.player_radius_coord = 55  # Adjustable radius in coordinates
         self.player_border_width = 0.1  # Adjustable border width
         self.player_position = QGraphicsEllipseItem(0, 0, 0, 0)
@@ -45,7 +45,7 @@ class MapWindow(QMainWindow):
         self.view.setDragMode(QGraphicsView.ScrollHandDrag)
         self.zoom_factor = 1.15
 
-        # Ukrycie pasków przewijania
+        # Hide scroll bars
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
@@ -70,14 +70,14 @@ class MapWindow(QMainWindow):
                         tile_item = QGraphicsPixmapItem(QPixmap.fromImage(qt_image))
                         tile_item.setPos(tile_x, tile_y)
 
-                        # Ustawienie interpolacji podczas rysowania na scenie
+                        # Set interpolation mode when drawing on the scene
                         tile_item.setTransformationMode(Qt.SmoothTransformation)
 
                         self.scene.addItem(tile_item)
                     except Exception as e:
-                        print(f"Nie udało się załadować pliku {tile_path}: {e}")
+                        print(f"Failed to load file {tile_path}: {e}")
                 else:
-                    print(f"Plik nie istnieje: {tile_pattern}")
+                    print(f"File does not exist: {tile_pattern}")
 
     def coord_to_pixel_radius(self, radius_coord):
         map_width = self.config["tile_count_x"] * TILE_SIZE
@@ -88,7 +88,7 @@ class MapWindow(QMainWindow):
         return (radius_coord / lon_range) * map_width
 
     def update_player_position(self, lon, lat):
-        # Skalowanie współrzędnych na piksele mapy
+        # Scale coordinates to map pixels
         map_width = self.config["tile_count_x"] * TILE_SIZE
         map_height = self.config["tile_count_y"] * TILE_SIZE
 
@@ -100,11 +100,10 @@ class MapWindow(QMainWindow):
             return
 
         x = ((lon - self.config["min_lon"]) / (self.config["max_lon"] - self.config["min_lon"])) * map_width
-        y = map_height - ((lat - self.config["min_lat"]) / (self.config["max_lat"] - self.config["min_lat"])) * map_height  # Odwrócenie osi Y
+        y = map_height - ((lat - self.config["min_lat"]) / (self.config["max_lat"] - self.config["min_lat"])) * map_height  # Invert Y axis
 
         # Convert radius from coordinates to pixels
         self.player_radius = self.coord_to_pixel_radius(self.player_radius_coord)
 
-        # Ustawienie pozycji punktu gracza
-        self.player_position.setRect(x - self.player_radius, y - self.player_radius, self.player_radius * 2,
-                                     self.player_radius * 2)
+        # Set player position
+        self.player_position.setRect(x - self.player_radius, y - self.player_radius, self.player_radius * 2, self.player_radius * 2)

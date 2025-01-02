@@ -17,7 +17,7 @@ def get_game_window(window_name):
 
 def capture_screen(game_window):
     if not game_window:
-        print("Nie znaleziono okna gry.")
+        print("Game window not found.")
         return None
     with mss() as sct:
         monitor = {
@@ -30,5 +30,5 @@ def capture_screen(game_window):
             screen = np.array(sct.grab(monitor))
             return cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
         except Exception as e:
-            print(f"Błąd podczas przechwytywania ekranu: {e}")
+            print(f"Error capturing screen: {e}")
             return None
