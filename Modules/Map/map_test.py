@@ -1,6 +1,7 @@
 import json
 import sys
 
+from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QApplication
 
 from Modules.Map.map_window import MapWindow
@@ -20,4 +21,6 @@ if __name__ == "__main__":
 
     # Przykładowa pozycja gracza
     window.update_player_position(78049, 96387)
+    # Ustawienie timera na 5 sekundy
+    QTimer.singleShot(5000, lambda: window.update_player_position(78000, 96300))
     sys.exit(app.exec_())

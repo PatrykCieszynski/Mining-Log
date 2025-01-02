@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QMainWindow, QGraphicsView, QGraphicsScene, QGraphicsEllipseItem, QGraphicsPixmapItem
-from PyQt5.QtGui import QPixmap, QPainter, QImage, QColor
+from PyQt5.QtGui import QPixmap, QPainter, QImage, QColor, QPen, QBrush
 from PyQt5.QtCore import Qt
 from PIL import Image
 import os
@@ -33,8 +33,11 @@ class MapWindow(QMainWindow):
         self.scene.setBackgroundBrush(QColor("#1a2f44"))
 
         # Pozycja gracza
-        self.player_position = QGraphicsEllipseItem(0, 0, 1, 1)
-        self.player_position.setBrush(Qt.red)
+        self.player_radius_coord = 55  # Adjustable radius in coordinates
+        self.player_border_width = 0.1  # Adjustable border width
+        self.player_position = QGraphicsEllipseItem(0, 0, 0, 0)
+        self.player_position.setBrush(QBrush(Qt.NoBrush))  # Empty inside
+        self.player_position.setPen(QPen(Qt.red, self.player_border_width))  # Red border with specified width
         self.scene.addItem(self.player_position)
 
         # Zoom
@@ -76,6 +79,14 @@ class MapWindow(QMainWindow):
                 else:
                     print(f"Plik nie istnieje: {tile_pattern}")
 
+    def coord_to_pixel_radius(self, radius_coord):
+        map_width = self.config["tile_count_x"] * TILE_SIZE
+        lon_range = self.config["max_lon"] - self.config["min_lon"]
+        if lon_range == 0:
+            print("Error: Longitude range is zero.")
+            return 0
+        return (radius_coord / lon_range) * map_width
+
     def update_player_position(self, lon, lat):
         # Skalowanie współrzędnych na piksele mapy
         map_width = self.config["tile_count_x"] * TILE_SIZE
@@ -91,5 +102,9 @@ class MapWindow(QMainWindow):
         x = ((lon - self.config["min_lon"]) / (self.config["max_lon"] - self.config["min_lon"])) * map_width
         y = map_height - ((lat - self.config["min_lat"]) / (self.config["max_lat"] - self.config["min_lat"])) * map_height  # Odwrócenie osi Y
 
+        # Convert radius from coordinates to pixels
+        self.player_radius = self.coord_to_pixel_radius(self.player_radius_coord)
+
         # Ustawienie pozycji punktu gracza
-        self.player_position.setPos(x, y)
+        self.player_position.setRect(x - self.player_radius, y - self.player_radius, self.player_radius * 2,
+                                     self.player_radius * 2)

@@ -1,61 +1,64 @@
 import cv2
-from pytesseract import pytesseract
 
-def multi_scale_template_matching(image, template, scales):
-    best_match = None
-    best_val = -1
-    for scale in scales:
-        resized_template = cv2.resize(template, (0, 0), fx=scale, fy=scale)
-        res = cv2.matchTemplate(image, resized_template, cv2.TM_CCOEFF_NORMED)
-        _, max_val, _, max_loc = cv2.minMaxLoc(res)
-        if max_val > best_val:
-            best_val = max_val
-            best_match = (max_loc, resized_template.shape)
-    return best_match
+import numpy as np
 
-def extract_coordinates_from_radar(screen_image):
-    radar_h, radar_w = 400, 400  # Example radar dimensions
-    screen_h, screen_w = screen_image.shape[:2]
-    radar_x = screen_w - radar_w
-    radar_y = screen_h - radar_h
+def detect_radar_from_game(game_image, radar_template_path, threshold=0.8, scale_range=(0.65, 1.35), scale_step=0.01, debug=False):
+    # Wczytaj szablon z kanałem alfa
+    radar_template = cv2.imread(radar_template_path, cv2.IMREAD_UNCHANGED)  # Zachowuje kanał alfa
+    if radar_template is None:
+        raise FileNotFoundError(f"Nie udało się załadować szablonu radaru: {radar_template_path}")
 
-    radar_image = screen_image[radar_y:radar_y+radar_h, radar_x:radar_x+radar_w]
+    # Rozdziel kanały szablonu
+    template_bgr = radar_template[:, :, :3]  # Kanały kolorów
+    template_alpha = radar_template[:, :, 3]  # Kanał alfa (przezroczystość)
 
-    # Convert radar image to grayscale
-    radar_gray = cv2.cvtColor(radar_image, cv2.COLOR_BGR2GRAY)
+    # Utwórz maskę dla nieprzezroczystych pikseli
+    mask = cv2.threshold(template_alpha, 1, 255, cv2.THRESH_BINARY)[1]
 
-    # Load templates for "Lon" and "Lat" labels
-    lon_template = cv2.imread('Assets/lon_template.png', 0)
-    lat_template = cv2.imread('Assets/lat_template.png', 0)
+    # Konwersja obrazu gry do skali szarości
+    game_image_gray = cv2.cvtColor(game_image, cv2.COLOR_BGR2GRAY)
 
-    # Perform multi-scale template matching
-    scales = [0.5, 0.75, 1.0, 1.25, 1.5]
-    lon_match = multi_scale_template_matching(radar_gray, lon_template, scales)
-    lat_match = multi_scale_template_matching(radar_gray, lat_template, scales)
+    # Inicjalizacja zmiennych do śledzenia najlepszego dopasowania
+    best_match_val = 0
+    best_match_loc = None
+    best_template_size = None
 
-    if lon_match and lat_match:
-        lon_loc, lon_size = lon_match
-        lat_loc, lat_size = lat_match
+    # Iteracja po różnych skalach
+    for scale in np.arange(scale_range[0], scale_range[1] + scale_step, scale_step):
+        # Skalowanie szablonu
+        scaled_template = cv2.resize(template_bgr, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+        scaled_mask = cv2.resize(mask, None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
 
-        # Define regions of interest based on template matching results
-        lon_region = radar_image[lon_loc[1]:lon_loc[1]+lon_size[0], lon_loc[0]+40:lon_loc[0]+90]
-        lat_region = radar_image[lat_loc[1]:lat_loc[1]+lat_size[0], lat_loc[0]+30:lat_loc[0]+90]
+        # Dopasowanie szablonu z maską
+        result = cv2.matchTemplate(game_image_gray, cv2.cvtColor(scaled_template, cv2.COLOR_BGR2GRAY), cv2.TM_CCOEFF_NORMED, mask=scaled_mask)
+        _, max_val, _, max_loc = cv2.minMaxLoc(result)
 
-        # Convert regions to grayscale and apply thresholding
-        lon_gray = cv2.cvtColor(lon_region, cv2.COLOR_BGR2GRAY)
-        lat_gray = cv2.cvtColor(lat_region, cv2.COLOR_BGR2GRAY)
-        _, lon_thresh = cv2.threshold(lon_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        _, lat_thresh = cv2.threshold(lat_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        # Aktualizacja najlepszego dopasowania
+        if max_val > best_match_val:
+            best_match_val = max_val
+            best_match_loc = max_loc
+            best_template_size = scaled_template.shape[:2]
 
-        # Extract text using pytesseract
-        lon_text = pytesseract.image_to_string(lon_thresh, config='--psm 7')
-        lat_text = pytesseract.image_to_string(lat_thresh, config='--psm 7')
+    # Sprawdź, czy znaleziono dopasowanie powyżej progu
+    if best_match_val < threshold:
+        raise ValueError(f"Nie udało się wykryć radaru (najlepsze dopasowanie: {best_match_val}).")
 
-        try:
-            lon_value = int(''.join(filter(str.isdigit, lon_text)))
-            lat_value = int(''.join(filter(str.isdigit, lat_text)))
-            return {"Lon": lon_value, "Lat": lat_value}
-        except ValueError:
-            return None
-    else:
-        return None
+    # Oblicz pozycję i rozmiar najlepszego dopasowania
+    radar_top_left = best_match_loc
+    radar_height, radar_width = best_template_size
+    radar_bottom_right = (radar_top_left[0] + radar_width, radar_top_left[1] + radar_height)
+
+    print(f"Radar znaleziony z dopasowaniem: {best_match_val}")
+    print(f"Pozycja: {radar_top_left}, Rozmiar: ({radar_width}, {radar_height})")
+
+    # Zaznacz radar na obrazie
+    #TODO Remove this block
+    if debug:
+        detected_image = game_image.copy()
+        cv2.rectangle(detected_image, radar_top_left, radar_bottom_rght, (0, 255, 0), 2)
+        # From the game_image_path, we extract the name of the file to save the result
+        save_name = f"Results/capture_{best_match_val}.jpg"
+        print(f"Zapisano obraz z zaznaczonym radarem: {save_name}")
+        cv2.imwrite(save_name, detected_image)
+
+    return radar_top_left, radar_bottom_right
