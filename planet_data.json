@@ -18,7 +18,7 @@
         "tile_count_y": 9
     },
       "Cyrene": {
-        "tile_folder": "../../Assets/Maps/Cyrene",
+        "tile_folder": "Assets/Maps/Cyrene",
         "min_lon": 122880,
         "max_lon": 139264,
         "min_lat": 73728,
@@ -27,7 +27,7 @@
         "tile_count_y": 2
     },
       "Monria": {
-        "tile_folder": "../../Assets/Maps/Monria",
+        "tile_folder": "Assets/Maps/Monria",
         "min_lon": 32768,
         "max_lon": 40960,
         "min_lat": 16384,
@@ -36,7 +36,7 @@
         "tile_count_y": 1
     },
       "Next Island": {
-        "tile_folder": "../../Assets/Maps/Next Island",
+        "tile_folder": "Assets/Maps/Next Island",
         "min_lon": 122880,
         "max_lon": 147456,
         "min_lat": 81920,
@@ -45,7 +45,7 @@
         "tile_count_y": 2
     },
       "Rocktropia": {
-        "tile_folder": "../../Assets/Maps/Rocktropia",
+        "tile_folder": "Assets/Maps/Rocktropia",
         "min_lon": 122880,
         "max_lon": 139264,
         "min_lat": 81920,
@@ -54,7 +54,7 @@
         "tile_count_y": 2
     },
       "Toulan": {
-        "tile_folder": "../../Assets/Maps/Toulan",
+        "tile_folder": "Assets/Maps/Toulan",
         "min_lon": 131072,
         "max_lon": 139264,
         "min_lat": 90112,

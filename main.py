@@ -8,8 +8,7 @@ from PyQt5.QtWidgets import QApplication
 
 from Modules.Map.map_window import MapWindow
 from Modules.Capture.capture_screen import get_game_window, capture_screen
-from Modules.OCR.ocr import detect_coords_from_radar, extract_lon_lat
-
+from Modules.OCR.ocr import detect_coords_from_radar, extract_lon_lat, detect_radar_from_game
 
 # Load planet configurations from JSON file
 with open('planet_data.json', 'r') as f:
@@ -33,10 +32,10 @@ class OCRWorker(QObject):
                 self.position_updated.emit(lon, lat)
 
 
-if __name__ == "__main__":
+def main():
     window_name = "Entropia Universe Client"
     radar_template_path = "Assets/radar_template.png"
-    coords_template_path = "Assets/Coords.png"
+    coords_template_path = "Assets/coords_template.png"
 
     selected_planet = "Arkadia"  # Change this to select a different planet
     config = planet_configs[selected_planet]
@@ -50,12 +49,9 @@ if __name__ == "__main__":
         print("Game window not found. Retrying...")
 
     capture = capture_screen(game_window)
-    cv2.imwrite("capture.png", capture)
 
     try:
-        radar_top_left = (1637, 733)
-        radar_bottom_right = (1907, 1052)
-        scale = 0.79
+        radar_top_left, radar_bottom_right, scale = detect_radar_from_game(capture, radar_template_path)
 
         coords_top_left, coords_bottom_right = detect_coords_from_radar(capture, coords_template_path, radar_top_left, radar_bottom_right, scale, True)
         print(f"Współrzędne znalezione: {coords_top_left}, {coords_bottom_right}")
@@ -72,3 +68,7 @@ if __name__ == "__main__":
 
     except Exception as e:
         print(f"Błąd: {e}")
+
+
+if __name__ == "__main__":
+    main()
