@@ -1,73 +1,45 @@
-import cv2
+# python
 import json
 import sys
-import threading
+from PyQt6.QtWidgets import QApplication
+from src.Map.map_window import MapWindow
+from src.Scanner.player_position_scanner import PlayerScanner
+from src.Utils.hotkey_scanner_listener import HotkeyScannerListener
 
-from PyQt5.QtCore import pyqtSignal, QObject
-from PyQt5.QtWidgets import QApplication
-
-from Modules.Map.map_window import MapWindow
-from Modules.Capture.capture_screen import get_game_window, capture_screen
-from Modules.OCR.ocr import detect_coords_from_radar, extract_lon_lat, detect_radar_from_game
-
-# Load planet configurations from JSON file
 with open('config/planet_data.json', 'r') as f:
     planet_configs = json.load(f)
 
-
-class OCRWorker(QObject):
-    position_updated = pyqtSignal(int, int)
-
-    def __init__(self, game_window, coords_top_left, coords_bottom_right):
-        super().__init__()
-        self.game_window = game_window
-        self.coords_top_left = coords_top_left
-        self.coords_bottom_right = coords_bottom_right
-
-    def run(self):
-        while True:
-            capture = capture_screen(self.game_window)
-            lon, lat = extract_lon_lat(capture, self.coords_top_left, self.coords_bottom_right, debug=True)
-            if lon is not None and lat is not None:
-                self.position_updated.emit(lon, lat)
-
-
 def main():
-    window_name = "Entropia Universe Client"
-    radar_template_path = "assets/radar_template.png"
-    coords_template_path = "assets/coords_template.png"
-
-    selected_planet = "Arkadia"  # Change this to select a different planet
+    selected_planet = "Rocktropia"
     config = planet_configs[selected_planet]
 
     app = QApplication(sys.argv)
     window = MapWindow(config)
     window.show()
 
-    game_window = get_game_window(window_name)
-    if not game_window:
-        print("Game window not found. Retrying...")
+    # Przekazujemy obsługę pozycji gracza do MapWindow
+    player_scanner = PlayerScanner(
+        on_position=window.update_player_position,
+        title_substr="Entropia Universe",
+        compass_size=(370, 430),
+        poll_interval=0.8
+    )
+    player_scanner.start()
 
-    capture = capture_screen(game_window)
+    # Przekazujemy obsługę skanowania claima do MapWindow
+    hotkey_scanner = HotkeyScannerListener(
+        offset_x=0,
+        offset_y=0,
+        inner_rect=None,
+        debug=False,
+        save_dir=None,
+        on_result=window.add_or_update_deed_marker_from_scan,
+        hotkey="f8",
+        cooldown_sec=0.5,
+    )
+    hotkey_scanner.start()
 
-    try:
-        radar_top_left, radar_bottom_right, scale = detect_radar_from_game(capture, radar_template_path)
-
-        coords_top_left, coords_bottom_right = detect_coords_from_radar(capture, coords_template_path, radar_top_left, radar_bottom_right, scale, True)
-
-        coords_top_left = (coords_top_left[0] + radar_top_left[0], coords_top_left[1] + radar_top_left[1])
-        coords_bottom_right = (coords_bottom_right[0] + radar_top_left[0], coords_bottom_right[1] + radar_top_left[1])
-
-        worker = OCRWorker(game_window, coords_top_left, coords_bottom_right)
-        worker.position_updated.connect(window.update_player_position)
-        thread = threading.Thread(target=worker.run)
-        thread.start()
-
-        sys.exit(app.exec_())
-
-    except Exception as e:
-        print(f"Error: {e}")
-
+    sys.exit(app.exec())
 
 if __name__ == "__main__":
     main()
