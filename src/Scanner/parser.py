@@ -1,13 +1,15 @@
 # python
+from datetime import datetime, timedelta
 from typing import Dict, List
 
+from src.Models.deed_model import DeedModel
 from src.Scanner.ocr_core import (
     RE_DEPTH,
-    RE_SIZE,
-    RE_RESOURCE,
-    RE_TIME,
-    RE_POS_WITH_PLANET,
     RE_POS_NUMBERS_ONLY,
+    RE_POS_WITH_PLANET,
+    RE_RESOURCE,
+    RE_SIZE,
+    RE_TIME,
 )
 
 
@@ -29,32 +31,35 @@ def _merge_position_lines(lines: List[str]) -> List[str]:
     return merged
 
 
-def parse_deed_text(text: str) -> Dict:
-    """
-    Parsuje tekst OCR i zwraca słownik z polami:
-    depth_m, size_label, size_points, resource, time_left, ttl_sec, planet, x, y, z, raw
-    """
-    out: Dict = {}
-
+def parse_deed_text(text: str) -> DeedModel:
     lines = [ln.strip() for ln in text.replace("\r", "").split("\n") if ln.strip()]
     lines = _merge_position_lines(lines)
     blob = "\n".join(lines)
 
+    out: dict = {"raw": blob}
+
+    # Depth
     if m := RE_DEPTH.search(blob):
         out["depth_m"] = int(m.group(1))
 
+    # Size
     if m := RE_SIZE.search(blob):
         out["size_label"] = m.group(1).title()
         out["size_points"] = int(m.group(2))
 
+    # Resource
     if m := RE_RESOURCE.search(blob):
         out["resource"] = " ".join(m.group(1).split())
 
+    # Time
     if m := RE_TIME.search(blob):
-        out["time_left"] = m.group(1)
         h, mi, s = map(int, m.group(1).split(":"))
-        out["ttl_sec"] = h * 3600 + mi * 60 + s
+        out["expire_time"] = datetime.now() + timedelta(hours=h, minutes=mi, seconds=s)
+        # print(datetime.now())
+        # print(timedelta(hours=h, minutes=mi, seconds=s))
+        # print(out["expire_time"])
 
+    # Position
     m = RE_POS_WITH_PLANET.search(blob) or RE_POS_NUMBERS_ONLY.search(blob)
     if m:
         groups = m.groups()
@@ -64,5 +69,4 @@ def parse_deed_text(text: str) -> Dict:
         else:
             out["x"], out["y"], out["z"] = map(int, groups)
 
-    out["raw"] = blob
-    return out
+    return DeedModel(**out)

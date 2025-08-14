@@ -1,21 +1,27 @@
 # python
 import os
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Any
 
 import cv2
 import numpy as np
 
-from src.Scanner.screen_capture import capture_corner_crop
-from src.Scanner.ocr_core import DEFAULT_INNER, preprocess_deed, ocr_text_block
+from src.Models.deed_model import DeedModel
+from src.Scanner.ocr_core import DEFAULT_INNER, ocr_text_block, preprocess_deed
 from src.Scanner.parser import parse_deed_text
+from src.Scanner.screen_capture import capture_corner_crop
 
 
 def extract_deed_from_image(
-    corner_image_bgr: np.ndarray,
-    inner_rect: Tuple[int, int, int, int] = (DEFAULT_INNER["x"], DEFAULT_INNER["y"], DEFAULT_INNER["w"], DEFAULT_INNER["h"]),
+    corner_image_bgr: np.ndarray[Any, Any],
+    inner_rect: Tuple[int, int, int, int] = (
+        DEFAULT_INNER["x"],
+        DEFAULT_INNER["y"],
+        DEFAULT_INNER["w"],
+        DEFAULT_INNER["h"],
+    ),
     debug: bool = False,
     save_dir: Optional[str] = None,
-) -> Dict:
+) -> DeedModel:
     """
     Przyjmuje obraz rogu okna (BGR), wycina wewnętrzny prostokąt, robi OCR i parsuje pola.
     """
@@ -52,12 +58,19 @@ def extract_deed_from_image(
 def extract_deed_from_window(
     offset_x: int = 0,
     offset_y: int = 0,
-    inner_rect: Tuple[int, int, int, int] = (DEFAULT_INNER["x"], DEFAULT_INNER["y"], DEFAULT_INNER["w"], DEFAULT_INNER["h"]),
+    inner_rect: Tuple[int, int, int, int] = (
+        DEFAULT_INNER["x"],
+        DEFAULT_INNER["y"],
+        DEFAULT_INNER["w"],
+        DEFAULT_INNER["h"],
+    ),
     debug: bool = False,
     save_dir: Optional[str] = None,
-) -> Dict:
+) -> DeedModel:
     """
     Przechwytuje róg okna gry i wywołuje ścieżkę ekstrakcji.
     """
     corner = capture_corner_crop(offset_x=offset_x, offset_y=offset_y)
-    return extract_deed_from_image(corner, inner_rect=inner_rect, debug=debug, save_dir=save_dir)
+    return extract_deed_from_image(
+        corner, inner_rect=inner_rect, debug=debug, save_dir=save_dir
+    )

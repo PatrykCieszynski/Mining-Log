@@ -1,23 +1,28 @@
 # python
-from PyQt6.QtWidgets import (
-    QMainWindow, QGraphicsView, QGraphicsScene, QGraphicsEllipseItem,
-    QGraphicsPixmapItem, QGraphicsTextItem
-)
-from PyQt6.QtGui import QPixmap, QPainter, QImage, QColor, QPen, QBrush, QFont
-from PyQt6.QtCore import Qt, QTimer
-from PIL import Image
-import os
 import glob
-from typing import List, Dict, Optional, Tuple
+import os
+from typing import Optional, Tuple, Any
+
+from PIL import Image
+from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtGui import QBrush, QColor, QImage, QPainter, QPen, QPixmap
+from PyQt6.QtWidgets import (
+    QGraphicsEllipseItem,
+    QGraphicsPixmapItem,
+    QGraphicsScene,
+    QGraphicsView,
+    QMainWindow,
+)
 
 from src.Map.map_deed_controller import DeedMarkerController
 from src.Map.map_view import MapView
+from src.Utils.hotkey_scanner_listener import HotkeyScannerListener
 
 TILE_SIZE = 512  # Tile size is always 512 px
 
 
 class MapWindow(QMainWindow):
-    def __init__(self, config):
+    def __init__(self, config: Any, scanner: Optional[HotkeyScannerListener] = None):
         super().__init__()
         self.config = config
         self.setWindowTitle("Interactive Map")
@@ -57,19 +62,23 @@ class MapWindow(QMainWindow):
         self.view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         # Connect deed markers controller
-        self.deed_marker_controller = DeedMarkerController(self.scene, self._lonlat_to_scene)
+        self.deed_marker_controller = DeedMarkerController(
+            self.scene, self._lonlat_to_scene, scanner=scanner
+        )
 
-    # def add_or_update_deed_marker(self, lon: int, lat: int, ttl_sec: int, label: Optional[str] = None):
-    #     self.deed_marker_controller.add_or_update_deed_marker(lon, lat, ttl_sec, label)
+        # Timer to refresh deed markers
+        self.deeds_timer = QTimer(self)
+        self.deeds_timer.timeout.connect(self.deed_marker_controller.tick_deeds)
+        self.deeds_timer.start(1000)  # run every 1s
 
-    def load_map_tiles(self, tile_folder):
+    def load_map_tiles(self, tile_folder: Any) -> None:
         total_w = self.config["tile_count_x"] * TILE_SIZE
         total_h = self.config["tile_count_y"] * TILE_SIZE
         added = 0
 
         for y in range(self.config["tile_count_y"]):
             for x in range(self.config["tile_count_x"]):
-                tile_index = y * self.config['tile_count_x'] + x
+                tile_index = y * self.config["tile_count_x"] + x
                 tile_pattern = os.path.join(tile_folder, f"map_*_{tile_index}.dds")
                 tile_files = glob.glob(tile_pattern)
 
@@ -83,14 +92,22 @@ class MapWindow(QMainWindow):
                     data = img.tobytes("raw", "RGBA")
                     bytes_per_line = img.width * 4
 
-                    qt_image = QImage(data, img.width, img.height, bytes_per_line, QImage.Format.Format_RGBA8888).copy()
+                    qt_image = QImage(
+                        data,
+                        img.width,
+                        img.height,
+                        bytes_per_line,
+                        QImage.Format.Format_RGBA8888,
+                    ).copy()
 
                     tile_x = x * TILE_SIZE
                     tile_y = y * TILE_SIZE
 
                     tile_item = QGraphicsPixmapItem(QPixmap.fromImage(qt_image))
                     tile_item.setPos(tile_x, tile_y)
-                    tile_item.setTransformationMode(Qt.TransformationMode.SmoothTransformation)
+                    tile_item.setTransformationMode(
+                        Qt.TransformationMode.SmoothTransformation
+                    )
                     self.scene.addItem(tile_item)
                     added += 1
                 except Exception as e:
@@ -100,25 +117,34 @@ class MapWindow(QMainWindow):
         self.scene.setSceneRect(0, 0, total_w, total_h)
 
         if added == 0:
-            print("Uwaga: nie dodano żadnych kafli. Sprawdź ścieżkę tile_folder oraz obsługę DDS.")
+            print(
+                "Uwaga: nie dodano żadnych kafli. Sprawdź ścieżkę tile_folder oraz obsługę DDS."
+            )
 
-    def coord_to_pixel_radius(self, radius_coord):
+    def coord_to_pixel_radius(self, radius_coord: Any) -> float:
         map_width = self.config["tile_count_x"] * TILE_SIZE
         lon_range = self.config["max_lon"] - self.config["min_lon"]
         if lon_range == 0:
             print("Error: Longitude range is zero.")
             return 0
-        return (radius_coord / lon_range) * map_width
+        return float ((radius_coord / lon_range) * map_width)
 
     def _lonlat_to_scene(self, lon: float, lat: float) -> Tuple[float, float]:
         map_width = self.config["tile_count_x"] * TILE_SIZE
         map_height = self.config["tile_count_y"] * TILE_SIZE
-        x = ((lon - self.config["min_lon"]) / (self.config["max_lon"] - self.config["min_lon"])) * map_width
-        y = map_height - ((lat - self.config["min_lat"]) / (self.config["max_lat"] - self.config["min_lat"])) * map_height
+        x = (
+            (lon - self.config["min_lon"])
+            / (self.config["max_lon"] - self.config["min_lon"])
+        ) * map_width
+        y = (
+            map_height
+            - (
+                (lat - self.config["min_lat"])
+                / (self.config["max_lat"] - self.config["min_lat"])
+            )
+            * map_height
+        )
         return x, y
 
     def update_player_position(self, lon, lat):
         print("player pos")
-
-    def add_or_update_deed_marker_from_scan(self, res: dict):
-        self.deed_marker_controller.add_or_update_deed_marker(res["x"], res["y"], res["ttl_sec"])

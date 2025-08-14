@@ -1,7 +1,20 @@
-# python
-from PyQt6.QtWidgets import QGraphicsEllipseItem, QGraphicsTextItem
-from PyQt6.QtGui import QBrush, QColor, QFont
-from typing import List, Dict, Optional
+from typing import Callable, Dict, List, Optional, Tuple, TypedDict
+
+from PyQt6.QtCore import QObject, Qt
+from PyQt6.QtGui import QBrush, QColor, QFont, QPen
+from PyQt6.QtWidgets import QGraphicsEllipseItem, QGraphicsTextItem, QGraphicsScene
+
+from src.Models.deed_model import DeedModel
+
+
+class MarkerData(TypedDict):
+    dot: QGraphicsEllipseItem
+    text: QGraphicsTextItem
+    pos: Tuple[float, float]
+    label_text: str | None
+    radius: float
+    deed: DeedModel
+
 
 def _fmt_ttl(sec: int) -> str:
     if sec < 0:
@@ -11,84 +24,119 @@ def _fmt_ttl(sec: int) -> str:
     s = sec % 60
     return f"{h:d}:{m:02d}:{s:02d}"
 
+
+def update_marker_visual(mk: MarkerData) -> None:
+    try:
+        ttl: int = mk["deed"].ttl_sec or 0
+        ttl_str: str = _fmt_ttl(ttl)
+        caption: str = ttl_str if not mk["label_text"] else f"{mk['label_text']} | {ttl_str}"
+        mk["text"].setPlainText(caption)
+        x, y = mk["pos"]
+        mk["text"].setPos(x + 0.5, y - 0.5)
+    except Exception as e:
+        print("Error updating marker:", e)
+
+
 class DeedMarkerController:
-    def __init__(self, scene, lonlat_to_scene):
-        self.scene = scene
-        self._lonlat_to_scene = lonlat_to_scene
-        self._deed_markers: List[Dict] = []
-        print(self.scene)
+    def __init__(
+        self,
+        scene: QGraphicsScene,
+        lonlat_to_scene: Callable[[float, float], Tuple[float, float]],
+        scanner: Optional[QObject] = None
+    ) -> None:
+        self.scene: QGraphicsScene = scene
+        self._lonlat_to_scene: Callable[[float, float], Tuple[float, float]] = lonlat_to_scene
+        self._deed_markers: List[MarkerData] = []
+        if scanner is not None:
+            self.attach_scanner(scanner)
 
-    def add_or_update_deed_marker(self, lon: int, lat: int, ttl_sec: int, label: Optional[str] = None):
+    def attach_scanner(self, scanner: QObject) -> None:
         try:
-            if ttl_sec is None:
-                ttl_sec = 0
-            print("Adding/updating deed marker from scan result:", lon, lat, ttl_sec, label)
+            scanner.deed_found.connect(self._on_scan_result)  # type: ignore[attr-defined]
+        except Exception as e:
+            print("Error attaching scanner:", e)
+
+    def detach_scanner(self, scanner: QObject) -> None:
+        try:
+            scanner.deed_found.disconnect(self._on_scan_result)  # type: ignore[attr-defined]
+        except Exception as e:
+            print("Error detaching scanner:", e)
+
+    def _on_scan_result(self, deed: DeedModel) -> None:
+        try:
+            print("Scan result:", deed)
+            self.add_or_update_deed_marker(deed)
+        except Exception as e:
+            print("Error in _on_scan_result:", e)
+
+    def add_or_update_deed_marker(self, deed: DeedModel) -> None:
+        try:
+            lon, lat = deed.x, deed.y
+            if lon is None or lat is None:
+                print("Skipping deed without coordinates")
+                return
+
+            ttl_sec: int = deed.ttl_sec or 0
+            label: Optional[str] = deed.resource
+
+            print("Adding/updating deed marker:", lon, lat, ttl_sec, label)
             x, y = self._lonlat_to_scene(lon, lat)
-            print("Scene coords:", x, y)
+            NEAR_PX: float = 10.0
 
-            NEAR_PX = 10.0
-            for mk in self._deed_markers:
-                mx, my = mk["pos"]
-                if (mx - x) ** 2 + (my - y) ** 2 <= NEAR_PX ** 2:
-                    mk["remaining"] = max(ttl_sec, mk["remaining"])
+            for marker in self._deed_markers:
+                marker_x, marker_x = marker["pos"]
+                if (marker_x - x) ** 2 + (marker_x - y) ** 2 <= NEAR_PX**2:
+                    if deed.ttl_sec and (marker["deed"].ttl_sec or 0) < deed.ttl_sec:
+                        marker["deed"] = deed
                     if label:
-                        mk["label_text"] = label
-                    self.update_marker_visual(mk)
+                        marker["label_text"] = label
+                    update_marker_visual(marker)
                     return
-            print(self.scene)
-            dot = QGraphicsEllipseItem(627.75, 568.3125, 10, 10)
-            dot.setBrush(QBrush(QColor("#ff0000")))
+
+            radius_px: float = 0.2
+            dot = QGraphicsEllipseItem(
+                x - radius_px, y - radius_px, radius_px * 2, radius_px * 2
+            )
+            dot.setBrush(QBrush(QColor("#00ff99")))
+            dot.setPen(QPen(Qt.PenStyle.NoPen))  # no border
             self.scene.addItem(dot)
 
-            radius_px = 50
-            dot = QGraphicsEllipseItem(x - radius_px, y - radius_px, radius_px * 2, radius_px * 2)
-            dot.setBrush(QBrush(QColor("#00ff99")))
-            self.scene.addItem(dot)
             text_item = QGraphicsTextItem()
             text_item.setDefaultTextColor(QColor("white"))
-
             font = QFont()
             font.setPointSize(9)
             text_item.setFont(font)
-            text_item.setFlag(text_item.GraphicsItemFlag.ItemIgnoresTransformations, True)
+            text_item.setFlag(
+                text_item.GraphicsItemFlag.ItemIgnoresTransformations, True
+            )
             text_item.setZValue(11)
             text_item.setPos(x + 8, y - 18)
             self.scene.addItem(text_item)
-            mk = dict(
-                dot=dot,
-                text=text_item,
-                pos=(x, y),
-                remaining=int(ttl_sec),
-                label_text=label or "",
-                radius=radius_px
-            )
-            self._deed_markers.append(mk)
-            print("Ticking deeds:", self._deed_markers)
-            self.update_marker_visual(mk)
-        except Exception as e:
-            print("Błąd przy dodawaniu markera:", e)
 
-    def update_marker_visual(self, mk: Dict):
-        try:
-            ttl_str = _fmt_ttl(mk["remaining"])
-            caption = ttl_str if not mk["label_text"] else f"{mk['label_text']} | {ttl_str}"
-            mk["text"].setPlainText(caption)
-            x, y = mk["pos"]
-            mk["text"].setPos(x + 0.5, y - 0.5)
+            new_marker: MarkerData = {
+                "dot": dot,
+                "text": text_item,
+                "pos": (x, y),
+                "label_text": label or "",
+                "radius": radius_px,
+                "deed": deed
+            }
+            self._deed_markers.append(new_marker)
+            update_marker_visual(new_marker)
         except Exception as e:
-            print("Błąd przy aktualizacji markera:", e)
+            print("Error adding marker:", e)
 
-    def tick_deeds(self):
+    def tick_deeds(self) -> None:
+        """Remove expired deeds and refresh timers."""
         try:
-            alive: List[Dict] = []
+            alive: List[MarkerData] = []
             for mk in self._deed_markers:
-                mk["remaining"] -= 1
-                if mk["remaining"] <= 0:
+                if (mk["deed"].ttl_sec or 0) <= 0:
                     self.scene.removeItem(mk["dot"])
                     self.scene.removeItem(mk["text"])
                     continue
-                self.update_marker_visual(mk)
+                update_marker_visual(mk)
                 alive.append(mk)
             self._deed_markers = alive
         except Exception as e:
-            print("Błąd przy ticku:", e)
+            print("Error in tick_deeds:", e)

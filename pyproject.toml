@@ -1,0 +1,28 @@
+[tool.poetry]  # jeśli nie używasz poetry, sekcja nie przeszkadza, plik i tak wykorzystamy do konfiguracji narzędzi
+name = "your-project"
+version = "0.1.0"
+description = "Project"
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "W", "I", "C", "B"]  # podstawowe reguły
+ignore = ["E203"]  # black compatibility
+extend-ignore = ["ANN"]  # opcjonalnie -- jeśli pydantic/mypy generuje ostrzeżenia typów
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+ignore_missing_imports = true
+warn_unused_configs = true
+plugins = ["pydantic.mypy"]
+
+[tool.pre-commit]
+# puste, konfiguracja znajduje się w .pre-commit-config.yaml

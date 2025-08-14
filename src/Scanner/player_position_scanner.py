@@ -9,16 +9,17 @@ Wymagania:
 - mss, numpy, OpenCV, pytesseract (tak jak w projekcie)
 - działa w tle jako wątek daemon
 """
+
+import re
 import threading
 import time
 from typing import Callable, Optional, Tuple
-import re
 
-import numpy as np
 import mss
+import numpy as np
 import win32gui
 
-from src.Scanner.ocr_core import preprocess_coords, ocr_text_block
+from src.Scanner.ocr_core import ocr_text_block, preprocess_coords
 
 # Domyślne rozmiary regionu kompasu (dostosuj do UI gry)
 DEFAULT_COMPASS_W = 30
@@ -26,6 +27,7 @@ DEFAULT_COMPASS_H = 30
 
 # Przykładowy regex dopasowujący "12345, 67890" lub "12345 67890" lub "12345,67890"
 _RE_LONLAT = re.compile(r"Lon:\s*(\d{1,6})\s*[\r\n]+Lat:\s*(\d{1,6})", re.IGNORECASE)
+
 
 def _find_game_hwnd(title_substr: str) -> Optional[int]:
     hwnd = None
@@ -43,7 +45,9 @@ def _find_game_hwnd(title_substr: str) -> Optional[int]:
     return hwnd
 
 
-def _build_compass_region(hwnd: int, w: int, h: int, pad_right: int = 8, pad_bottom: int = 10) -> dict:
+def _build_compass_region(
+    hwnd: int, w: int, h: int, pad_right: int = 8, pad_bottom: int = 10
+) -> dict:
     """
     Wylicza prostokąt w ekranowych współrzędnych odpowiadający obszarowi kompasu
     przystawionemu do prawego-dolnego rogu klienta okna (z małym paddingiem).
@@ -71,6 +75,7 @@ class PlayerScanner(threading.Thread):
     - title_substr: fragment tytułu okna gry (np. "Entropia Universe")
     - poll_interval: czas pomiędzy skanami w sekundach
     """
+
     def __init__(
         self,
         on_position: Callable[[int, int], None],
@@ -103,7 +108,7 @@ class PlayerScanner(threading.Thread):
 
                     # Wycinamy tylko fragment z lon/lat
                     x, y, w, h = 55, 372, 110, 47
-                    roi = img[y:y + h, x:x + w]
+                    roi = img[y : y + h, x : x + w]
 
                     # Preprocess i OCR tylko na ROI
                     gray = preprocess_coords(roi)

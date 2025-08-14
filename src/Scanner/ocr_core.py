@@ -35,6 +35,7 @@ RE_POS_NUMBERS_ONLY = re.compile(
 #     "lime left": "Time left",
 # }
 
+
 def preprocess_deed(bgr: np.ndarray) -> np.ndarray:
     """
     Stabilny pipeline do OCR:
@@ -47,27 +48,31 @@ def preprocess_deed(bgr: np.ndarray) -> np.ndarray:
     gray = cv2.medianBlur(gray, 3)
     return gray
 
+
 def _bin_from_white_mask(bgr):
     # „białe litery” – niska saturacja, wysoka wartość
     hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, (0, 0, 190), (179, 60, 255))  # dopasuj 190/60 gdy trzeba
     # wypełnij dziurki i lekko rozszerz
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((2,2), np.uint8), iterations=1)
-    mask = cv2.dilate(mask, np.ones((2,2), np.uint8), iterations=1)
+    mask = cv2.morphologyEx(
+        mask, cv2.MORPH_CLOSE, np.ones((2, 2), np.uint8), iterations=1
+    )
+    mask = cv2.dilate(mask, np.ones((2, 2), np.uint8), iterations=1)
     # przekształć do „czarny tekst na białym”
     thr = 255 - mask
     return thr
+
 
 def preprocess_coords(bgr: np.ndarray) -> np.ndarray:
     # 1) powiększ „bez cukru”
     h, w = bgr.shape[:2]
     scale = 3
-    bgr = cv2.resize(bgr, (w*scale, h*scale), interpolation=cv2.INTER_LINEAR)
+    bgr = cv2.resize(bgr, (w * scale, h * scale), interpolation=cv2.INTER_LINEAR)
 
     # 2) wzmocnij jasność tylko na kanale L (Lab)
     lab = cv2.cvtColor(bgr, cv2.COLOR_BGR2LAB)
     L, a, b = cv2.split(lab)
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     L = clahe.apply(L)
     lab = cv2.merge([L, a, b])
     bgr_eq = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
@@ -75,8 +80,10 @@ def preprocess_coords(bgr: np.ndarray) -> np.ndarray:
     thr2 = _bin_from_white_mask(bgr_eq)
 
     # podgląd (opcjonalnie)
-    cv2.imshow("pre2", thr2); cv2.waitKey(1)
+    cv2.imshow("pre2", thr2)
+    cv2.waitKey(1)
     return thr2
+
 
 CFG_BLOCK = "-l eng --oem 1 --psm 6 -c tessedit_char_whitelist=0123456789:,LatLon "
 

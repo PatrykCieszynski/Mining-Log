@@ -1,6 +1,7 @@
 # python
+from PyQt6.QtGui import QBrush, QColor, QPen
 from PyQt6.QtWidgets import QGraphicsEllipseItem
-from PyQt6.QtGui import QBrush, QPen, QColor
+
 
 class PlayerPositionController:
     def __init__(self, scene, lonlat_to_scene, radius_coord, border_width):
