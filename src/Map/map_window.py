@@ -25,7 +25,7 @@ TILE_SIZE = 512  # Tile size is always 512 px
 
 
 class MapWindow(QMainWindow):
-    def __init__(self, config: Any, deed_scanner: HotkeyScannerListener, player_scanner: PlayerScanner):
+    def __init__(self, config: Any, deed_scanner: HotkeyScannerListener, player_scanner: PlayerScanner, system_event_manager: Optional[SystemEventsManager] = None):
         super().__init__()
         self.config = config
         self.setWindowTitle("Interactive Map")
@@ -87,7 +87,8 @@ class MapWindow(QMainWindow):
         player_scanner.position_found.connect(self._on_player_position_updated)
 
         # Connect system events manager
-        # system_event_manager.resource_depleted.connect(self._on_resource_depleted)
+        if system_event_manager is not None:
+            system_event_manager.resource_depleted.connect(self._on_resource_depleted)  # type: ignore
 
     def load_map_tiles(self, tile_folder: Any) -> None:
         total_w = self.config["tile_count_x"] * TILE_SIZE
@@ -167,7 +168,7 @@ class MapWindow(QMainWindow):
     def _on_player_position_updated(self, lon: float, lat: float) -> None:
         x, y = self._lonlat_to_scene(lon, lat)
         self.player_scene_pos = (x, y)
-        self.player_position_controller.update_position(x, y)
+        self.center_map_on_player(x, y)
 
     def center_map_on_player(self, lon: int, lat: int) -> None:
         self.view.centerOn(lon, lat)

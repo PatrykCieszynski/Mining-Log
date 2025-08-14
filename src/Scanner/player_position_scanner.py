@@ -49,7 +49,7 @@ class PlayerScanner(QObject):
 
     def __init__(
         self,
-        title_substr: str = "Entropia Universe",
+        title_substr: str = "Entropia Universe Client",
         compass_size: Tuple[int, int] = (DEFAULT_COMPASS_W, DEFAULT_COMPASS_H),
         poll_interval: float = 1.0,
     ) -> None:

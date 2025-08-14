@@ -5,7 +5,7 @@ import mss
 import numpy as np
 import win32gui
 
-WINDOW_TITLE_SUBSTR = "Entropia Universe"
+WINDOW_TITLE_SUBSTR = "Entropia Universe Client"
 CROP_W, CROP_H = 445, 445  # rozmiar wycinka z lewego-górnego rogu okna gry
 
 

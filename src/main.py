@@ -33,19 +33,19 @@ def main() -> None:
 
     # Creating a player scanner to track player position
     player_scanner = PlayerScanner(
-        title_substr="Entropia Universe",
+        title_substr="Entropia Universe Client",
         compass_size=(370, 430),
-        poll_interval=0.1,
+        poll_interval=0.5,
     )
 
     # Creating a listener for logging chat messages
-    # chat_listener = ChatLogListener(r"X:\Dokumenty\Entropia Universe\chat.log")
-    # system_manager = SystemEventsManager(chat_listener)
+    chat_listener = ChatLogListener(r"X:\Dokumenty\Entropia Universe\chat.log")
+    system_manager = SystemEventsManager(chat_listener)
 
-    window = MapWindow(config, deed_scanner=hotkey_scanner, player_scanner=player_scanner)
+    window = MapWindow(config, deed_scanner=hotkey_scanner, player_scanner=player_scanner, system_event_manager=system_manager)
     hotkey_scanner.start()
     player_scanner.start()
-    # chat_listener.start()
+    chat_listener.start()
 
     window.show()
     sys.exit(app.exec())
