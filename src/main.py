@@ -4,6 +4,8 @@ import sys
 
 from PyQt6.QtWidgets import QApplication
 
+from src.ChatLogger.SystemEventsManager.system_event_manager import SystemEventsManager
+from src.ChatLogger.log_listener import ChatLogListener
 from src.Map.map_window import MapWindow
 from src.Scanner.player_position_scanner import PlayerScanner
 from src.Utils.hotkey_scanner_listener import HotkeyScannerListener
@@ -29,20 +31,23 @@ def main() -> None:
         cooldown_sec=0.5,
     )
 
-    window = MapWindow(config, scanner=hotkey_scanner)
-    hotkey_scanner.start()
-
-    window.show()
-
-    # Przekazujemy obsługę pozycji gracza do MapWindow
+    # Creating a player scanner to track player position
     player_scanner = PlayerScanner(
-        on_position=window.update_player_position,
         title_substr="Entropia Universe",
         compass_size=(370, 430),
-        poll_interval=0.8,
+        poll_interval=0.1,
     )
-    player_scanner.start()
 
+    # Creating a listener for logging chat messages
+    # chat_listener = ChatLogListener(r"X:\Dokumenty\Entropia Universe\chat.log")
+    # system_manager = SystemEventsManager(chat_listener)
+
+    window = MapWindow(config, deed_scanner=hotkey_scanner, player_scanner=player_scanner)
+    hotkey_scanner.start()
+    player_scanner.start()
+    # chat_listener.start()
+
+    window.show()
     sys.exit(app.exec())
 
 

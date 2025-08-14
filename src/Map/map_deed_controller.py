@@ -1,3 +1,4 @@
+import math
 from typing import Callable, Dict, List, Optional, Tuple, TypedDict
 
 from PyQt6.QtCore import QObject, Qt
@@ -140,3 +141,23 @@ class DeedMarkerController:
             self._deed_markers = alive
         except Exception as e:
             print("Error in tick_deeds:", e)
+
+    def remove_nearest_deed(self, player_pos: Tuple[float, float]) -> None:
+        if not self._deed_markers:
+            return
+
+        nearest = None
+        nearest_dist = float("inf")
+
+        for mk in self._deed_markers:
+            mx, my = mk["pos"]
+            dist = math.hypot(mx - player_pos[0], my - player_pos[1])
+            if dist < nearest_dist:
+                nearest_dist = dist
+                nearest = mk
+
+        if nearest:
+            self.scene.removeItem(nearest["dot"])
+            self.scene.removeItem(nearest["text"])
+            self._deed_markers.remove(nearest)
+            print(f"[DeedMarkerController] Removed nearest deed at distance {nearest_dist:.2f}")

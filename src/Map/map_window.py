@@ -14,15 +14,18 @@ from PyQt6.QtWidgets import (
     QMainWindow,
 )
 
+from src.ChatLogger.SystemEventsManager.system_event_manager import SystemEventsManager
 from src.Map.map_deed_controller import DeedMarkerController
 from src.Map.map_view import MapView
+from src.Map.player_position_controller import PlayerPositionController
+from src.Scanner.player_position_scanner import PlayerScanner
 from src.Utils.hotkey_scanner_listener import HotkeyScannerListener
 
 TILE_SIZE = 512  # Tile size is always 512 px
 
 
 class MapWindow(QMainWindow):
-    def __init__(self, config: Any, scanner: Optional[HotkeyScannerListener] = None):
+    def __init__(self, config: Any, deed_scanner: HotkeyScannerListener, player_scanner: PlayerScanner):
         super().__init__()
         self.config = config
         self.setWindowTitle("Interactive Map")
@@ -45,6 +48,7 @@ class MapWindow(QMainWindow):
         self.load_map_tiles(config["tile_folder"])
 
         # Player position
+        self.player_scene_pos = (0.0, 0.0)
         self.player_radius_coord = 55
         self.player_border_width = 0.1
         self.player_position = QGraphicsEllipseItem(0, 0, 0, 0)
@@ -63,13 +67,27 @@ class MapWindow(QMainWindow):
 
         # Connect deed markers controller
         self.deed_marker_controller = DeedMarkerController(
-            self.scene, self._lonlat_to_scene, scanner=scanner
+            self.scene, self._lonlat_to_scene, scanner=deed_scanner
         )
 
         # Timer to refresh deed markers
         self.deeds_timer = QTimer(self)
         self.deeds_timer.timeout.connect(self.deed_marker_controller.tick_deeds)
         self.deeds_timer.start(1000)  # run every 1s
+
+        # Connect player position controller
+        self.player_position_controller = PlayerPositionController(
+            self.scene,
+            self._lonlat_to_scene,
+            self.coord_to_pixel_radius,
+            self.player_radius_coord,
+            self.player_border_width,
+            scanner = player_scanner
+        )
+        player_scanner.position_found.connect(self._on_player_position_updated)
+
+        # Connect system events manager
+        # system_event_manager.resource_depleted.connect(self._on_resource_depleted)
 
     def load_map_tiles(self, tile_folder: Any) -> None:
         total_w = self.config["tile_count_x"] * TILE_SIZE
@@ -146,5 +164,14 @@ class MapWindow(QMainWindow):
         )
         return x, y
 
-    def update_player_position(self, lon, lat):
-        print("player pos")
+    def _on_player_position_updated(self, lon: float, lat: float) -> None:
+        x, y = self._lonlat_to_scene(lon, lat)
+        self.player_scene_pos = (x, y)
+        self.player_position_controller.update_position(x, y)
+
+    def center_map_on_player(self, lon: int, lat: int) -> None:
+        self.view.centerOn(lon, lat)
+
+    def _on_resource_depleted(self, message: str) -> None:
+        print(f"[MapWindow] Resource depleted detected: {message}")
+        self.deed_marker_controller.remove_nearest_deed(self.player_scene_pos)
