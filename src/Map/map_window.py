@@ -57,10 +57,10 @@ class MapWindow(QMainWindow):
         self.view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         # Connect deed markers controller
-        self.deed_manager = DeedMarkerController(self.scene, self._lonlat_to_scene)
+        self.deed_marker_controller = DeedMarkerController(self.scene, self._lonlat_to_scene)
 
-    def add_or_update_deed_marker(self, lon, lat, ttl, label):
-        self.deed_manager.add_or_update_deed_marker(lon, lat, ttl, label)
+    # def add_or_update_deed_marker(self, lon: int, lat: int, ttl_sec: int, label: Optional[str] = None):
+    #     self.deed_marker_controller.add_or_update_deed_marker(lon, lat, ttl_sec, label)
 
     def load_map_tiles(self, tile_folder):
         total_w = self.config["tile_count_x"] * TILE_SIZE
@@ -121,4 +121,4 @@ class MapWindow(QMainWindow):
         print("player pos")
 
     def add_or_update_deed_marker_from_scan(self, res: dict):
-        print("add or update deed marker from scan")
+        self.deed_marker_controller.add_or_update_deed_marker(res["x"], res["y"], res["ttl_sec"])

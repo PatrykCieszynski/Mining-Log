@@ -16,12 +16,16 @@ class DeedMarkerController:
         self.scene = scene
         self._lonlat_to_scene = lonlat_to_scene
         self._deed_markers: List[Dict] = []
+        print(self.scene)
 
     def add_or_update_deed_marker(self, lon: int, lat: int, ttl_sec: int, label: Optional[str] = None):
         try:
             if ttl_sec is None:
                 ttl_sec = 0
+            print("Adding/updating deed marker from scan result:", lon, lat, ttl_sec, label)
             x, y = self._lonlat_to_scene(lon, lat)
+            print("Scene coords:", x, y)
+
             NEAR_PX = 10.0
             for mk in self._deed_markers:
                 mx, my = mk["pos"]
@@ -31,12 +35,18 @@ class DeedMarkerController:
                         mk["label_text"] = label
                     self.update_marker_visual(mk)
                     return
-            radius_px = 0.2
+            print(self.scene)
+            dot = QGraphicsEllipseItem(627.75, 568.3125, 10, 10)
+            dot.setBrush(QBrush(QColor("#ff0000")))
+            self.scene.addItem(dot)
+
+            radius_px = 50
             dot = QGraphicsEllipseItem(x - radius_px, y - radius_px, radius_px * 2, radius_px * 2)
             dot.setBrush(QBrush(QColor("#00ff99")))
             self.scene.addItem(dot)
             text_item = QGraphicsTextItem()
             text_item.setDefaultTextColor(QColor("white"))
+
             font = QFont()
             font.setPointSize(9)
             text_item.setFont(font)
@@ -53,6 +63,7 @@ class DeedMarkerController:
                 radius=radius_px
             )
             self._deed_markers.append(mk)
+            print("Ticking deeds:", self._deed_markers)
             self.update_marker_visual(mk)
         except Exception as e:
             print("Błąd przy dodawaniu markera:", e)
