@@ -9,9 +9,9 @@ from src.Map.map_window import MapWindow
 
 
 def main() -> None:
-    ctx = create_app_context("config/default.yaml")
-
     app = QApplication(sys.argv)
+
+    ctx = create_app_context("config/default.yaml")
 
     window = MapWindow(ctx)
     ctx.start_all()

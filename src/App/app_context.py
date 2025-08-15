@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, cast
 
+from PyQt6.QtCore import QTimer
+
 from .config_loader import load_config
 from .signal_bus import SignalBus
 from ..ChatLogger.log_listener import ChatLogListener
@@ -27,6 +29,9 @@ class AppContext:
     system_event_manager: SystemEventManager
 
     #Controllers
+
+    #Timers
+    deed_timer: QTimer
 
     def start_all(self) -> None:
         """Start all scanners/listeners."""
@@ -68,6 +73,11 @@ def create_app_context(config_path: str = "../../config/default.yaml") -> AppCon
     deed_marker_service = DeedMarkerService(bus, config)
     system_event_manager = SystemEventManager(bus)
 
+    # Timer to refresh deed markers
+    deed_timer = QTimer()
+    deed_timer.timeout.connect(deed_marker_service.tick_deeds)
+    deed_timer.start(1000)  # run every 1s
+
     chat_listener = ChatLogListener(bus , r"X:\Dokumenty\Entropia Universe\chat.log")
 
     return AppContext(
@@ -78,5 +88,6 @@ def create_app_context(config_path: str = "../../config/default.yaml") -> AppCon
         chat_listener=chat_listener,
         player_position_service=player_position_service,
         deed_marker_service=deed_marker_service,
-        system_event_manager=system_event_manager
+        system_event_manager=system_event_manager,
+        deed_timer=deed_timer
     )

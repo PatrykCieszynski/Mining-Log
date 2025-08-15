@@ -37,7 +37,7 @@ class MapWindow(QMainWindow):
 
         # Scene and view
         self.scene = QGraphicsScene()
-        self.view = MapView(self.scene, self, self.config)
+        self.view = MapView(self.scene, self.config)
         self.view.setGeometry(QRect(*self.config["map"]["window_geometry"]))
         self.view.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.setCentralWidget(self.view)
@@ -66,11 +66,6 @@ class MapWindow(QMainWindow):
         # Hide scroll bars
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-
-        # Timer to refresh deed markers
-        # self.deeds_timer = QTimer(self)
-        # self.deeds_timer.timeout.connect(ctx.deed_marker_controller.tick_deeds)
-        # self.deeds_timer.start(1000)  # run every 1s
 
         # Marker data
         self.ui_markers = {}
@@ -145,6 +140,8 @@ class MapWindow(QMainWindow):
         dot.setPen(QPen(Qt.PenStyle.NoPen))  # brak obramowania
         self.scene.addItem(dot)
 
+        # deed time
+        print("Deed time left ", deed.time_left)
         text_item = QGraphicsTextItem(deed.time_left)
         text_item.setDefaultTextColor(QColor("white"))
         font = QFont()
@@ -154,7 +151,7 @@ class MapWindow(QMainWindow):
             text_item.GraphicsItemFlag.ItemIgnoresTransformations, True
         )
         text_item.setZValue(11)
-        text_item.setPos(x + 8, y - 18)
+        text_item.setPos(x, y)
         self.scene.addItem(text_item)
 
         # Zapisujemy w lokalnej mapie, żeby potem móc odwołać się po marker_id

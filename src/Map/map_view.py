@@ -1,16 +1,17 @@
 # python
-from typing import Any
+from typing import Any, Dict
 
 from PyQt6.QtGui import QMouseEvent, QWheelEvent
 from PyQt6.QtWidgets import QGraphicsView, QLabel
 
-TILE_SIZE = 512  # Tile size is always 512 px
+from src.Map.map_utils import get_planet_config
 
 
 class MapView(QGraphicsView):
-    def __init__(self, scene: Any, parent: Any, config: Any) -> None:
-        super().__init__(scene, parent)
-        self.config = config
+    def __init__(self, scene: Any, config: Dict[str, Any]) -> None:
+        super().__init__(scene)
+        self.planet_config = get_planet_config(config)
+        self.tile_size = config["map"]["tile_size"]
         self.setMouseTracking(True)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
@@ -35,14 +36,14 @@ class MapView(QGraphicsView):
         if event is not None:
             cursor_pos = self.mapToScene(event.pos())
 
-            map_width = self.config["tile_count_x"] * TILE_SIZE
-            map_height = self.config["tile_count_y"] * TILE_SIZE
+            map_width = self.planet_config["tile_count_x"] * self.tile_size
+            map_height = self.planet_config["tile_count_y"] * self.tile_size
 
-            lon = self.config["min_lon"] + (cursor_pos.x() / map_width) * (
-                self.config["max_lon"] - self.config["min_lon"]
+            lon = self.planet_config["min_lon"] + (cursor_pos.x() / map_width) * (
+                self.planet_config["max_lon"] - self.planet_config["min_lon"]
             )
-            lat = self.config["min_lat"] + ((map_height - cursor_pos.y()) / map_height) * (
-                self.config["max_lat"] - self.config["min_lat"]
+            lat = self.planet_config["min_lat"] + ((map_height - cursor_pos.y()) / map_height) * (
+                self.planet_config["max_lat"] - self.planet_config["min_lat"]
             )
 
             self.coordinates_label.setText(

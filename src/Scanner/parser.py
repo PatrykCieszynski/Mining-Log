@@ -1,5 +1,6 @@
 # python
 from datetime import datetime, timedelta
+from time import monotonic
 from typing import Dict, List
 
 from src.Models.deed_model import DeedModel
@@ -54,10 +55,8 @@ def parse_deed_text(text: str) -> DeedModel:
     # Time
     if m := RE_TIME.search(blob):
         h, mi, s = map(int, m.group(1).split(":"))
-        out["expire_time"] = datetime.now() + timedelta(hours=h, minutes=mi, seconds=s)
-        # print(datetime.now())
-        # print(timedelta(hours=h, minutes=mi, seconds=s))
-        # print(out["expire_time"])
+        ttl_sec = h * 3600 + mi * 60 + s
+        out["expire_monotonic"] = monotonic() + ttl_sec
 
     # Position
     m = RE_POS_WITH_PLANET.search(blob) or RE_POS_NUMBERS_ONLY.search(blob)
