@@ -1,5 +1,5 @@
 import math
-from typing import Callable, Dict, List, Optional, Tuple, TypedDict
+from typing import Callable, Dict, List, Optional, Tuple, TypedDict, Any
 
 from PyQt6.QtCore import QObject, Qt
 from PyQt6.QtGui import QBrush, QColor, QFont, QPen
@@ -41,15 +41,14 @@ def update_marker_visual(mk: MarkerData) -> None:
 class DeedMarkerController:
     def __init__(
         self,
+        ctx: Any,
         scene: QGraphicsScene,
         lonlat_to_scene: Callable[[float, float], Tuple[float, float]],
-        scanner: Optional[QObject] = None
     ) -> None:
         self.scene: QGraphicsScene = scene
         self._lonlat_to_scene: Callable[[float, float], Tuple[float, float]] = lonlat_to_scene
         self._deed_markers: List[MarkerData] = []
-        if scanner is not None:
-            self.attach_scanner(scanner)
+        self.deed_scanner = ctx.deed_scanner
 
     def attach_scanner(self, scanner: QObject) -> None:
         try:

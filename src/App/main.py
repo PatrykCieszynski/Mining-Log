@@ -19,9 +19,6 @@ def main() -> None:
 
     app = QApplication(sys.argv)
 
-    # Creating a listener for logging chat messages
-    # system_manager = SystemEventsManager(chat_listener)
-
     window = MapWindow(ctx)
     ctx.start_all()
 

@@ -66,10 +66,10 @@ class MapWindow(QMainWindow):
         self.view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         # Connect deed markers controller
-        ctx.deed_marker_controller = DeedMarkerController(
+        self.ctx.deed_marker_controller = DeedMarkerController(
+            self.ctx,
             self.scene,
             self._lonlat_to_scene,
-            ctx.deed_scanner
         )
 
         # Timer to refresh deed markers
@@ -79,12 +79,12 @@ class MapWindow(QMainWindow):
 
         # Connect player position controller
         ctx.player_position_controller = PlayerPositionController(
+            self.ctx,
             self.scene,
             self._lonlat_to_scene,
             self.coord_to_pixel_radius,
             self.player_radius_coord,
             self.player_border_width,
-            ctx.player_scanner
         )
         self.bus.player_position_found.connect(self._on_player_position_updated)
 
