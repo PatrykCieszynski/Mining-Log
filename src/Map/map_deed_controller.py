@@ -1,10 +1,11 @@
 import math
-from typing import Callable, Dict, List, Optional, Tuple, TypedDict, Any
+from typing import Callable, List, Optional, Tuple, TypedDict
 
 from PyQt6.QtCore import QObject, Qt
 from PyQt6.QtGui import QBrush, QColor, QFont, QPen
 from PyQt6.QtWidgets import QGraphicsEllipseItem, QGraphicsTextItem, QGraphicsScene
 
+from src.App.signal_bus import SignalBus
 from src.Models.deed_model import DeedModel
 
 
@@ -41,26 +42,15 @@ def update_marker_visual(mk: MarkerData) -> None:
 class DeedMarkerController:
     def __init__(
         self,
-        ctx: Any,
+        bus: SignalBus,
         scene: QGraphicsScene,
         lonlat_to_scene: Callable[[float, float], Tuple[float, float]],
     ) -> None:
         self.scene: QGraphicsScene = scene
         self._lonlat_to_scene: Callable[[float, float], Tuple[float, float]] = lonlat_to_scene
         self._deed_markers: List[MarkerData] = []
-        self.deed_scanner = ctx.deed_scanner
 
-    def attach_scanner(self, scanner: QObject) -> None:
-        try:
-            scanner.deed_found.connect(self._on_scan_result)  # type: ignore[attr-defined]
-        except Exception as e:
-            print("Error attaching scanner:", e)
-
-    def detach_scanner(self, scanner: QObject) -> None:
-        try:
-            scanner.deed_found.disconnect(self._on_scan_result)  # type: ignore[attr-defined]
-        except Exception as e:
-            print("Error detaching scanner:", e)
+        bus.deed_found.connect(self._on_scan_result)
 
     def _on_scan_result(self, deed: DeedModel) -> None:
         try:

@@ -1,10 +1,10 @@
 # python
-from typing import Any, Optional
+from typing import Any
 
-from PyQt6.QtCore import QObject
 from PyQt6.QtGui import QBrush, QColor, QPen
 from PyQt6.QtWidgets import QGraphicsEllipseItem
 
+from src.App.signal_bus import SignalBus
 
 TILE_SIZE = 512
 
@@ -13,14 +13,13 @@ class PlayerPositionController:
 
     def __init__(
             self,
-            ctx: Any,
+            bus: SignalBus,
             scene: Any,
             lonlat_to_scene: Any,
             coord_to_pixel_radius,
             radius_coord: Any,
             border_width: Any,
     ) -> None:
-        self.ctx = ctx
         self.scene = scene
         self.lonlat_to_scene = lonlat_to_scene
         self.coord_to_pixel_radius = coord_to_pixel_radius
@@ -31,9 +30,7 @@ class PlayerPositionController:
         self.player_item.setPen(QPen(QColor("red"), self.border_width))
 
         self.scene.addItem(self.player_item)
-        self.player_scanner = ctx.player_scanner
-
-        self.ctx.bus.player_position_found.connect(self._on_position_found)
+        bus.player_position_found.connect(self._on_position_found)
 
     def _on_position_found(self, lon: int, lat: int) -> None:
         print("Player position found: ", lon, lat, "")

@@ -66,8 +66,8 @@ class MapWindow(QMainWindow):
         self.view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         # Connect deed markers controller
-        self.ctx.deed_marker_controller = DeedMarkerController(
-            self.ctx,
+        ctx.deed_marker_controller = DeedMarkerController(
+            self.bus,
             self.scene,
             self._lonlat_to_scene,
         )
@@ -79,7 +79,7 @@ class MapWindow(QMainWindow):
 
         # Connect player position controller
         ctx.player_position_controller = PlayerPositionController(
-            self.ctx,
+            self.bus,
             self.scene,
             self._lonlat_to_scene,
             self.coord_to_pixel_radius,
@@ -87,9 +87,6 @@ class MapWindow(QMainWindow):
             self.player_border_width,
         )
         self.bus.player_position_found.connect(self._on_player_position_updated)
-
-        # Connect system events manager
-        self.bus.resource_depleted.connect(self._on_resource_depleted)
 
     def load_map_tiles(self, tile_folder: Any) -> None:
         total_w = self.config["tile_count_x"] * TILE_SIZE
