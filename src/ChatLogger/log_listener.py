@@ -4,18 +4,18 @@ import time
 from typing import Optional
 from PyQt6.QtCore import QObject, pyqtSignal
 
+from src.App.signal_bus import SignalBus
+
 
 class ChatLogListener(QObject):
-    system_event = pyqtSignal(str)   # whole message from [System]
-    globals_event = pyqtSignal(str)  # whole message from [Globals]
-    other_event = pyqtSignal(str)    # other channels
 
     _channel_regex = re.compile(
         r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \[(?P<channel>\S+)\] .+$"
     )
 
-    def __init__(self, chat_log_path: str, poll_interval: float = 0.1) -> None:
+    def __init__(self, bus: SignalBus, chat_log_path: str, poll_interval: float = 0.1) -> None:
         super().__init__()
+        self.bus = bus
         self.chat_log_path = chat_log_path
         self.poll_interval = poll_interval
         self._thread: Optional[threading.Thread] = None

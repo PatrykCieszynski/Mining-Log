@@ -11,7 +11,15 @@ TILE_SIZE = 512
 
 class PlayerPositionController:
 
-    def __init__(self, scene: Any, lonlat_to_scene: Any, coord_to_pixel_radius, radius_coord: Any, border_width: Any, scanner: Optional[QObject] = None):
+    def __init__(
+            self,
+            scene: Any,
+            lonlat_to_scene: Any,
+            coord_to_pixel_radius,
+            radius_coord: Any,
+            border_width: Any,
+            scanner: Optional[QObject] = None
+    ) -> None:
         self.scene = scene
         self.lonlat_to_scene = lonlat_to_scene
         self.coord_to_pixel_radius = coord_to_pixel_radius

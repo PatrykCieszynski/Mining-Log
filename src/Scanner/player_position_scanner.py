@@ -1,13 +1,14 @@
 import re
 import threading
 import time
-from typing import Callable, Optional, Tuple
+from typing import Optional, Tuple
 
 import mss
 import numpy as np
 import win32gui
-from PyQt6.QtCore import QObject, pyqtSignal
+from PyQt6.QtCore import QObject
 
+from src.App.signal_bus import SignalBus
 from src.Scanner.ocr_core import ocr_text_block, preprocess_coords
 
 DEFAULT_COMPASS_W = 30
@@ -45,15 +46,15 @@ def _build_compass_region(
 
 
 class PlayerScanner(QObject):
-    position_found = pyqtSignal(int, int)  # lon, lat
-
     def __init__(
         self,
+        bus: SignalBus,
         title_substr: str = "Entropia Universe Client",
         compass_size: Tuple[int, int] = (DEFAULT_COMPASS_W, DEFAULT_COMPASS_H),
-        poll_interval: float = 1.0,
+        poll_interval: float = 1.0
     ) -> None:
         super().__init__()
+        self.bus = bus
         self.title_substr = title_substr
         self.compass_w, self.compass_h = compass_size
         self.poll_interval = poll_interval
@@ -97,7 +98,7 @@ class PlayerScanner(QObject):
                         try:
                             lon = int(m.group(1))
                             lat = int(m.group(2))
-                            self.position_found.emit(lon, lat)
+                            self.bus.player_position_found.emit(lon, lat)
                         except ValueError:
                             pass
                 except Exception:

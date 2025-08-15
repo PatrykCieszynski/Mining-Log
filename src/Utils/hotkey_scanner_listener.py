@@ -6,16 +6,17 @@ import keyboard
 from typing import Optional, Tuple
 from PyQt6.QtCore import QObject, pyqtSignal
 
+from src.App.signal_bus import SignalBus
 from src.Models.deed_model import DeedModel
 from src.Scanner.ocr_controller import extract_deed_from_window
 from src.Scanner.ocr_core import DEFAULT_INNER
 
 
 class HotkeyScannerListener(QObject):
-    deed_found = pyqtSignal(DeedModel)
 
     def __init__(
         self,
+        bus: SignalBus,
         offset_x: int = 0,
         offset_y: int = 0,
         inner_rect: Optional[Tuple[int, int, int, int]] = None,
@@ -25,6 +26,7 @@ class HotkeyScannerListener(QObject):
         cooldown_sec: float = 0.5,
     ) -> None:
         super().__init__()
+        self.bus = bus
         self.offset_x = offset_x
         self.offset_y = offset_y
         self.inner_rect = inner_rect or (
@@ -71,7 +73,7 @@ class HotkeyScannerListener(QObject):
                                 save_dir=self.save_dir,
                             )
                             try:
-                                self.deed_found.emit(deed)
+                                self.bus.deed_found.emit(deed)
                             except Exception as e:
                                 print(f"[scanner] Błąd emisji sygnału: {e}")
                         except Exception as e:
