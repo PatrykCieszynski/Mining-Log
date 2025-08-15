@@ -1,25 +1,23 @@
 # python
 import glob
 import os
-from typing import Optional, Tuple, Any
+from typing import Any
 
 from PIL import Image
-from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QBrush, QColor, QImage, QPainter, QPen, QPixmap
+from PyQt6.QtCore import Qt, QTimer, QRectF, QPointF, QRect
+from PyQt6.QtGui import QBrush, QColor, QImage, QPainter, QPen, QPixmap, QFont
 from PyQt6.QtWidgets import (
     QGraphicsEllipseItem,
     QGraphicsPixmapItem,
     QGraphicsScene,
     QGraphicsView,
-    QMainWindow,
+    QMainWindow, QGraphicsTextItem,
 )
 
 from src.App.app_context import AppContext
-from src.Map.map_deed_controller import DeedMarkerController
+from src.Map.map_utils import get_planet_config
 from src.Map.map_view import MapView
-from src.Map.player_position_controller import PlayerPositionController
-
-TILE_SIZE = 512  # Tile size is always 512 px
+from src.Models.deed_model import DeedModel
 
 
 class MapWindow(QMainWindow):
@@ -28,8 +26,11 @@ class MapWindow(QMainWindow):
         self.ctx = ctx
         self.config = ctx.config
         self.bus = ctx.bus
-        self.setWindowTitle("Interactive Map")
-        self.setGeometry(100, 100, 800, 600)
+
+        self.tile_size = self.config["map"]["tile_size"]
+        self.setWindowTitle(self.config["map"]["window_title"])
+        self.setGeometry(QRect(*self.config["map"]["window_geometry"]))
+        self.planet_config = get_planet_config(self.config)
 
         # Always on top
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
@@ -37,7 +38,7 @@ class MapWindow(QMainWindow):
         # Scene and view
         self.scene = QGraphicsScene()
         self.view = MapView(self.scene, self, self.config)
-        self.view.setGeometry(0, 0, 800, 600)
+        self.view.setGeometry(QRect(*self.config["map"]["window_geometry"]))
         self.view.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.setCentralWidget(self.view)
 
@@ -45,57 +46,47 @@ class MapWindow(QMainWindow):
         self.scene.setBackgroundBrush(QColor("#1a2f44"))
 
         # Load map tiles
-        self.load_map_tiles(self.config["tile_folder"])
+        self.load_map_tiles(self.planet_config["tile_folder"])
 
         # Player position
-        self.player_scene_pos = (0.0, 0.0)
-        self.player_radius_coord = 55
-        self.player_border_width = 0.1
-        self.player_position = QGraphicsEllipseItem(0, 0, 0, 0)
-        self.player_position.setBrush(QBrush(Qt.BrushStyle.NoBrush))
-        self.player_position.setPen(QPen(QColor("red"), self.player_border_width))
-        self.scene.addItem(self.player_position)
+        self.player_pos = QPointF(0, 0)
+        self.player_radius_coord = self.config["player"]["radius_coord"]
+        self.player_border_width = self.config["player"]["border_width"]
+        self.player_rect = QGraphicsEllipseItem(0, 0, 0, 0)
+        self.player_rect.setBrush(QBrush(Qt.BrushStyle.NoBrush))
+        self.player_rect.setPen(QPen(QColor("red"), self.player_border_width))
+        self.scene.addItem(self.player_rect)
+        self.bus.player_position_changed.connect(self._on_player_position_changed)
 
         # Zoom/drag
         self.view.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.view.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
-        self.zoom_factor = 1.15
+        self.zoom_factor = self.config["map"]["zoom_factor"]
 
         # Hide scroll bars
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
-        # Connect deed markers controller
-        ctx.deed_marker_controller = DeedMarkerController(
-            self.bus,
-            self.scene,
-            self._lonlat_to_scene,
-        )
-
         # Timer to refresh deed markers
-        self.deeds_timer = QTimer(self)
-        self.deeds_timer.timeout.connect(ctx.deed_marker_controller.tick_deeds)
-        self.deeds_timer.start(1000)  # run every 1s
+        # self.deeds_timer = QTimer(self)
+        # self.deeds_timer.timeout.connect(ctx.deed_marker_controller.tick_deeds)
+        # self.deeds_timer.start(1000)  # run every 1s
 
-        # Connect player position controller
-        ctx.player_position_controller = PlayerPositionController(
-            self.bus,
-            self.scene,
-            self._lonlat_to_scene,
-            self.coord_to_pixel_radius,
-            self.player_radius_coord,
-            self.player_border_width,
-        )
-        self.bus.player_position_found.connect(self._on_player_position_updated)
+        # Marker data
+        self.ui_markers = {}
+        self.bus.deed_marker_added.connect(self._on_deed_marker_added)
+        self.bus.deed_marker_updated.connect(self._on_deed_marker_updated)
+        self.bus.deed_marker_removed.connect(self._on_deed_marker_removed)
+        self.bus.deed_marker_tick.connect(self._on_deed_marker_tick)
 
     def load_map_tiles(self, tile_folder: Any) -> None:
-        total_w = self.config["tile_count_x"] * TILE_SIZE
-        total_h = self.config["tile_count_y"] * TILE_SIZE
+        total_w = self.planet_config["tile_count_x"] * self.tile_size
+        total_h = self.planet_config["tile_count_y"] * self.tile_size
         added = 0
 
-        for y in range(self.config["tile_count_y"]):
-            for x in range(self.config["tile_count_x"]):
-                tile_index = y * self.config["tile_count_x"] + x
+        for y in range(self.planet_config["tile_count_y"]):
+            for x in range(self.planet_config["tile_count_x"]):
+                tile_index = y * self.planet_config["tile_count_x"] + x
                 tile_pattern = os.path.join(tile_folder, f"map_*_{tile_index}.dds")
                 tile_files = glob.glob(tile_pattern)
 
@@ -117,8 +108,8 @@ class MapWindow(QMainWindow):
                         QImage.Format.Format_RGBA8888,
                     ).copy()
 
-                    tile_x = x * TILE_SIZE
-                    tile_y = y * TILE_SIZE
+                    tile_x = x * self.tile_size
+                    tile_y = y * self.tile_size
 
                     tile_item = QGraphicsPixmapItem(QPixmap.fromImage(qt_image))
                     tile_item.setPos(tile_x, tile_y)
@@ -138,40 +129,54 @@ class MapWindow(QMainWindow):
                 "Uwaga: nie dodano żadnych kafli. Sprawdź ścieżkę tile_folder oraz obsługę DDS."
             )
 
-    def coord_to_pixel_radius(self, radius_coord: Any) -> float:
-        map_width = self.config["tile_count_x"] * TILE_SIZE
-        lon_range = self.config["max_lon"] - self.config["min_lon"]
-        if lon_range == 0:
-            print("Error: Longitude range is zero.")
-            return 0
-        return float ((radius_coord / lon_range) * map_width)
+    def _on_player_position_changed(self, position: QPointF, rect: QRectF) -> None:
+        self.player_pos = position
+        self.player_rect.setRect(rect)
+        self.center_map_on_player(position)
 
-    def _lonlat_to_scene(self, lon: float, lat: float) -> Tuple[float, float]:
-        map_width = self.config["tile_count_x"] * TILE_SIZE
-        map_height = self.config["tile_count_y"] * TILE_SIZE
-        x = (
-            (lon - self.config["min_lon"])
-            / (self.config["max_lon"] - self.config["min_lon"])
-        ) * map_width
-        y = (
-            map_height
-            - (
-                (lat - self.config["min_lat"])
-                / (self.config["max_lat"] - self.config["min_lat"])
-            )
-            * map_height
+    def center_map_on_player(self, position: QPointF) -> None:
+        self.view.centerOn(position)
+
+    def _on_deed_marker_added(self, marker_id: str, x: float, y: float, radius_px: float, deed: DeedModel):
+        dot = QGraphicsEllipseItem(
+            x - radius_px, y - radius_px, radius_px * 2, radius_px * 2
         )
-        return x, y
+        dot.setBrush(QBrush(QColor("#00ff99")))
+        dot.setPen(QPen(Qt.PenStyle.NoPen))  # brak obramowania
+        self.scene.addItem(dot)
 
-    def _on_player_position_updated(self, lon: float, lat: float) -> None:
-        x, y = self._lonlat_to_scene(lon, lat)
-        self.player_scene_pos = (x, y)
-        self.center_map_on_player(x, y)
+        text_item = QGraphicsTextItem(deed.time_left)
+        text_item.setDefaultTextColor(QColor("white"))
+        font = QFont()
+        font.setPointSize(9)
+        text_item.setFont(font)
+        text_item.setFlag(
+            text_item.GraphicsItemFlag.ItemIgnoresTransformations, True
+        )
+        text_item.setZValue(11)
+        text_item.setPos(x + 8, y - 18)
+        self.scene.addItem(text_item)
 
-    def center_map_on_player(self, lon: int, lat: int) -> None:
-        self.view.centerOn(lon, lat)
+        # Zapisujemy w lokalnej mapie, żeby potem móc odwołać się po marker_id
+        self.ui_markers[marker_id] = {
+            "dot": dot,
+            "text": text_item
+        }
 
-    def _on_resource_depleted(self, message: str) -> None:
-        print(f"[MapWindow] Resource depleted detected: {message}")
-        if self.ctx.deed_marker_controller:
-            self.ctx.deed_marker_controller.remove_nearest_deed(self.player_scene_pos)
+    def _on_deed_marker_updated(self, marker_id: str, x: float, y: float, radius_px: float, deed: DeedModel):
+        if marker_id in self.ui_markers:
+            caption = deed.time_left
+            if deed.resource:
+                caption = f"{deed.resource} | {caption}"
+            self.ui_markers[marker_id]["text"].setPlainText(caption)
+            self.ui_markers[marker_id]["text"].setPos(x + 8, y - 18)
+
+    def _on_deed_marker_removed(self, marker_id: str):
+        if marker_id in self.ui_markers:
+            self.scene.removeItem(self.ui_markers[marker_id]["dot"])
+            self.scene.removeItem(self.ui_markers[marker_id]["text"])
+            del self.ui_markers[marker_id]
+
+    def _on_deed_marker_tick(self, marker_id: str, ttl_sec: int):
+        if marker_id in self.ui_markers:
+            self.ui_markers[marker_id]["text"].setPlainText(f"{ttl_sec // 60}:{ttl_sec % 60:02}")

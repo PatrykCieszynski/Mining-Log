@@ -10,13 +10,12 @@ class DeedModel(BaseModel):
     planet: Optional[str] = None
     x: Optional[int] = None
     y: Optional[int] = None
-    z: Optional[int] = None
     raw: str
     expire_monotonic: Optional[float] = None  # seconds since monotonic start
 
     @property
     def ttl_sec(self) -> Optional[int]:
-        # Compute TTL using monotonic clock
+        # Compute TTL using a monotonic clock
         if self.expire_monotonic is None:
             return None
         left = int(self.expire_monotonic - time.monotonic())

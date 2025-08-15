@@ -1,10 +1,12 @@
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
+
+from .config_loader import load_config
 from .signal_bus import SignalBus
 from ..ChatLogger.log_listener import ChatLogListener
-from ..Map.map_deed_controller import DeedMarkerController
-from ..Map.player_position_controller import PlayerPositionController
 from ..Scanner.player_position_scanner import PlayerScanner
+from ..Services.map_deed_service import DeedMarkerService
+from ..Services.player_position_service import PlayerPositionService
 from ..Services.system_event_manager import SystemEventManager
 from ..Utils.hotkey_scanner_listener import HotkeyScannerListener
 
@@ -20,11 +22,11 @@ class AppContext:
     chat_listener: ChatLogListener
 
     #Services
+    player_position_service: PlayerPositionService
+    deed_marker_service: DeedMarkerService
     system_event_manager: SystemEventManager
 
     #Controllers
-    deed_marker_controller: Optional[DeedMarkerController] = None
-    player_position_controller: Optional[PlayerPositionController] = None
 
     def start_all(self) -> None:
         """Start all scanners/listeners."""
@@ -38,8 +40,10 @@ class AppContext:
         self.deed_scanner.stop()
         self.chat_listener.stop()
 
-def create_app_context(config: Dict[str, Any]) -> AppContext:
-    # Create a central signal bus and hold config
+def create_app_context(config_path: str = "../../config/default.yaml") -> AppContext:
+    config = load_config(config_path)
+
+    # Create a central signal bus
     bus = SignalBus()
 
     deed_scanner = HotkeyScannerListener(
@@ -49,17 +53,19 @@ def create_app_context(config: Dict[str, Any]) -> AppContext:
         inner_rect=None,
         debug=False,
         save_dir=None,
-        hotkey="f8",
+        hotkey=config["hotkey_scanner"]["hotkey"],
         cooldown_sec=0.5,
     )
 
     player_scanner = PlayerScanner(
         bus=bus,
-        title_substr="Entropia Universe Client",
-        compass_size=(370, 430),
-        poll_interval=0.5
+        title_substr=config["game_window"]["title"],
+        compass_size=config["compass_ocr"]["compass_size"],
+        poll_interval=config["compass_ocr"]["poll_interval"]
     )
 
+    player_position_service = PlayerPositionService(bus, config)
+    deed_marker_service = DeedMarkerService(bus, config)
     system_event_manager = SystemEventManager(bus)
 
     chat_listener = ChatLogListener(bus , r"X:\Dokumenty\Entropia Universe\chat.log")
@@ -70,5 +76,7 @@ def create_app_context(config: Dict[str, Any]) -> AppContext:
         deed_scanner=deed_scanner,
         player_scanner=player_scanner,
         chat_listener=chat_listener,
+        player_position_service=player_position_service,
+        deed_marker_service=deed_marker_service,
         system_event_manager=system_event_manager
     )

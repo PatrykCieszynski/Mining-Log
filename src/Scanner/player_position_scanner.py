@@ -98,7 +98,7 @@ class PlayerScanner(QObject):
                         try:
                             lon = int(m.group(1))
                             lat = int(m.group(2))
-                            self.bus.player_position_found.emit(lon, lat)
+                            self.bus.player_position_parsed.emit(lon, lat)
                         except ValueError:
                             pass
                 except Exception:

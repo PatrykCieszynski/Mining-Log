@@ -1,0 +1,97 @@
+game_window:
+  title: "Entropia Universe Client"
+
+compass_ocr:
+  compass_size: [370, 430]
+  compass_offset_right: 8
+  compass_offset_bottom: 10
+  poll_interval: 0.5
+
+map:
+  tile_size: 512
+  zoom_factor: 1.15
+  window_title: "Mining Map"
+  window_geometry: [
+    1000, 0,  # x, y
+    450, 450  # width, height
+  ]
+  planet: "Rocktropia"
+
+player:
+  radius_coord: 55
+  border_width: 0.1
+
+hotkey_scanner: # aka deed_scanner
+  hotkey: "f8"
+
+ocr:
+  inner_rect: [55, 372, 110, 47]
+  tesseract_lang: "eng"
+
+chat_log:
+  path: "X:/Dokumenty/Entropia Universe/chat.txt"
+  poll_interval: 0.1
+
+planets:
+  Arkadia:
+    tile_folder: "../../assets/Maps/Arkadia"
+    min_lon: 8192
+    max_lon: 32768
+    min_lat: 8192
+    max_lat: 32768
+    tile_count_x: 3
+    tile_count_y: 3
+
+  Calypso:
+    tile_folder: "assets/Maps/Calypso"
+    min_lon: 16384
+    max_lon: 90112
+    min_lat: 24576
+    max_lat: 98304
+    tile_count_x: 9
+    tile_count_y: 9
+
+  Cyrene:
+    tile_folder: "assets/Maps/Cyrene"
+    min_lon: 122880
+    max_lon: 139264
+    min_lat: 73728
+    max_lat: 90112
+    tile_count_x: 2
+    tile_count_y: 2
+
+  Monria:
+    tile_folder: "assets/Maps/Monria"
+    min_lon: 32768
+    max_lon: 40960
+    min_lat: 16384
+    max_lat: 24576
+    tile_count_x: 1
+    tile_count_y: 1
+
+  Next Island:
+    tile_folder: "assets/Maps/Next Island"
+    min_lon: 122880
+    max_lon: 147456
+    min_lat: 81920
+    max_lat: 98304
+    tile_count_x: 3
+    tile_count_y: 2
+
+  Rocktropia:
+    tile_folder: "assets/Maps/Rocktropia"
+    min_lon: 122880
+    max_lon: 139264
+    min_lat: 81920
+    max_lat: 98304
+    tile_count_x: 2
+    tile_count_y: 2
+
+  Toulan:
+    tile_folder: "assets/Maps/Toulan"
+    min_lon: 131072
+    max_lon: 139264
+    min_lat: 90112
+    max_lat: 98304
+    tile_count_x: 1
+    tile_count_y: 1
