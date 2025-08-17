@@ -10,7 +10,7 @@ compass_ocr:
 map:
   tile_size: 512
   zoom_factor: 1.15
-  window_title: "Mining Map"
+  window_title: "Mining map"
   window_geometry: [
     1000, 0,  # x, y
     450, 450  # width, height

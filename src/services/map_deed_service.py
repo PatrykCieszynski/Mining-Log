@@ -1,9 +1,9 @@
 from typing import List, Dict, Any
 from PyQt6.QtCore import QObject, QPointF, QTimer
 
-from src.App.signal_bus import SignalBus
-from src.Map.map_utils import lonlat_to_scene
-from src.Models.deed_model import DeedModel
+from src.app.signal_bus import SignalBus
+from src.map.map_utils import lonlat_to_scene
+from src.models.deed_model import DeedModel
 
 
 class MarkerData:

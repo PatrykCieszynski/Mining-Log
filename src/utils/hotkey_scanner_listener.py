@@ -6,10 +6,10 @@ import keyboard
 from typing import Optional, Tuple
 from PyQt6.QtCore import QObject, pyqtSignal
 
-from src.App.signal_bus import SignalBus
-from src.Models.deed_model import DeedModel
-from src.Scanner.ocr_controller import extract_deed_from_window
-from src.Scanner.ocr_core import DEFAULT_INNER
+from src.app.signal_bus import SignalBus
+from src.models.deed_model import DeedModel
+from src.scanner.ocr_controller import extract_deed_from_window
+from src.scanner.ocr_core import DEFAULT_INNER
 
 
 class HotkeyScannerListener(QObject):

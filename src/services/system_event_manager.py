@@ -1,6 +1,6 @@
 import time
 from PyQt6.QtCore import QObject
-from src.App.signal_bus import SignalBus
+from src.app.signal_bus import SignalBus
 
 class SystemEventManager(QObject):
     """Filter raw system messages and emit high-level events."""

@@ -3,8 +3,8 @@ from typing import Dict, Any
 
 from PyQt6.QtCore import QPointF, QRectF
 
-from src.App.signal_bus import SignalBus
-from src.Map.map_utils import lonlat_to_scene, coord_to_pixel_radius
+from src.app.signal_bus import SignalBus
+from src.map.map_utils import lonlat_to_scene, coord_to_pixel_radius
 
 
 class PlayerPositionService:

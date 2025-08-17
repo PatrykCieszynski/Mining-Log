@@ -14,10 +14,10 @@ from PyQt6.QtWidgets import (
     QMainWindow, QGraphicsTextItem,
 )
 
-from src.App.app_context import AppContext
-from src.Map.map_utils import get_planet_config
-from src.Map.map_view import MapView
-from src.Models.deed_model import DeedModel
+from src.app.app_context import AppContext
+from src.map.map_utils import get_planet_config
+from src.map.map_view import MapView
+from src.models.deed_model import DeedModel
 
 
 class MapWindow(QMainWindow):

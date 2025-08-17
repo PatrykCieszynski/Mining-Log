@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import List, Optional, Tuple, Callable
 import math
-from src.Models.deed_model import DeedModel
+from src.models.deed_model import DeedModel
 
 class DeedRepository:
     """In-memory store for active deeds."""

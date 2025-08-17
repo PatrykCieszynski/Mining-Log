@@ -4,8 +4,8 @@ import sys
 
 from PyQt6.QtWidgets import QApplication
 
-from src.App.app_context import create_app_context
-from src.Map.map_window import MapWindow
+from src.app.app_context import create_app_context
+from src.map.map_window import MapWindow
 
 
 def main() -> None:

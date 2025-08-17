@@ -8,8 +8,8 @@ import numpy as np
 import win32gui
 from PyQt6.QtCore import QObject
 
-from src.App.signal_bus import SignalBus
-from src.Scanner.ocr_core import ocr_text_block, preprocess_coords
+from src.app.signal_bus import SignalBus
+from src.scanner.ocr_core import ocr_text_block, preprocess_coords
 
 DEFAULT_COMPASS_W = 30
 DEFAULT_COMPASS_H = 30

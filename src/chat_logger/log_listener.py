@@ -4,7 +4,7 @@ import time
 from typing import Optional
 from PyQt6.QtCore import QObject, pyqtSignal
 
-from src.App.signal_bus import SignalBus
+from src.app.signal_bus import SignalBus
 
 
 class ChatLogListener(QObject):

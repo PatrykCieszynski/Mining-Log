@@ -1,5 +1,5 @@
 from PyQt6.QtCore import QObject, pyqtSignal, QRectF, QPointF
-from src.Models.deed_model import DeedModel
+from src.models.deed_model import DeedModel
 
 class SignalBus(QObject):
     # Chat / System

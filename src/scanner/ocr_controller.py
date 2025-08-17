@@ -5,10 +5,10 @@ from typing import Dict, Optional, Tuple, Any
 import cv2
 import numpy as np
 
-from src.Models.deed_model import DeedModel
-from src.Scanner.ocr_core import DEFAULT_INNER, ocr_text_block, preprocess_deed
-from src.Scanner.parser import parse_deed_text
-from src.Scanner.screen_capture import capture_corner_crop
+from src.models.deed_model import DeedModel
+from src.scanner.ocr_core import DEFAULT_INNER, ocr_text_block, preprocess_deed
+from src.scanner.parser import parse_deed_text
+from src.scanner.screen_capture import capture_corner_crop
 
 
 def extract_deed_from_image(

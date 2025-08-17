@@ -4,7 +4,7 @@ from typing import Any, Dict
 from PyQt6.QtGui import QMouseEvent, QWheelEvent
 from PyQt6.QtWidgets import QGraphicsView, QLabel
 
-from src.Map.map_utils import get_planet_config
+from src.map.map_utils import get_planet_config
 
 
 class MapView(QGraphicsView):

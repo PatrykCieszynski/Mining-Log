@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 from time import monotonic
 from typing import Dict, List
 
-from src.Models.deed_model import DeedModel
-from src.Scanner.ocr_core import (
+from src.models.deed_model import DeedModel
+from src.scanner.ocr_core import (
     RE_DEPTH,
     RE_POS_NUMBERS_ONLY,
     RE_POS_WITH_PLANET,

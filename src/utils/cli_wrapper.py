@@ -3,8 +3,8 @@ import json
 
 import cv2
 
-from src.Scanner.ocr_controller import extract_deed_from_image, extract_deed_from_window
-from src.Scanner.ocr_core import DEFAULT_INNER
+from src.scanner.ocr_controller import extract_deed_from_image, extract_deed_from_window
+from src.scanner.ocr_core import DEFAULT_INNER
 
 
 def cli_main() -> None:

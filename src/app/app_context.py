@@ -5,12 +5,12 @@ from PyQt6.QtCore import QTimer
 
 from .config_loader import load_config
 from .signal_bus import SignalBus
-from ..ChatLogger.log_listener import ChatLogListener
-from ..Scanner.player_position_scanner import PlayerScanner
-from ..Services.map_deed_service import DeedMarkerService
-from ..Services.player_position_service import PlayerPositionService
-from ..Services.system_event_manager import SystemEventManager
-from ..Utils.hotkey_scanner_listener import HotkeyScannerListener
+from ..chat_logger.log_listener import ChatLogListener
+from ..scanner.player_position_scanner import PlayerScanner
+from ..services.map_deed_service import DeedMarkerService
+from ..services.player_position_service import PlayerPositionService
+from ..services.system_event_manager import SystemEventManager
+from ..utils.hotkey_scanner_listener import HotkeyScannerListener
 
 
 @dataclass
@@ -23,7 +23,7 @@ class AppContext:
     player_scanner: PlayerScanner
     chat_listener: ChatLogListener
 
-    #Services
+    #services
     player_position_service: PlayerPositionService
     deed_marker_service: DeedMarkerService
     system_event_manager: SystemEventManager
