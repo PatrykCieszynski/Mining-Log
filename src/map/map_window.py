@@ -23,6 +23,8 @@ from src.models.deed_model import DeedModel
 class MapWindow(QMainWindow):
     def __init__(self, ctx: AppContext):
         super().__init__()
+        self.map_height = None
+        self.map_width = None
         self.ctx = ctx
         self.config = ctx.config
         self.bus = ctx.bus
@@ -74,6 +76,9 @@ class MapWindow(QMainWindow):
         self.bus.deed_marker_removed.connect(self._on_deed_marker_removed)
         self.bus.deed_marker_tick.connect(self._on_deed_marker_tick)
 
+        #Resource Claimed
+        self.bus.resource_claimed.connect(self._on_resource_claimed)
+
     def load_map_tiles(self, tile_folder: Any) -> None:
         total_w = self.planet_config["tile_count_x"] * self.tile_size
         total_h = self.planet_config["tile_count_y"] * self.tile_size
@@ -119,6 +124,10 @@ class MapWindow(QMainWindow):
         # Scene rect
         self.scene.setSceneRect(0, 0, total_w, total_h)
 
+        # ⬇️ zapamiętaj rozmiar sceny/mapy (użyjemy do QImage)
+        self.map_width = int(total_w)
+        self.map_height = int(total_h)
+
         if added == 0:
             print(
                 "Uwaga: nie dodano żadnych kafli. Sprawdź ścieżkę tile_folder oraz obsługę DDS."
@@ -128,6 +137,33 @@ class MapWindow(QMainWindow):
         self.player_pos = position
         self.player_rect.setRect(rect)
         self.center_map_on_player(position)
+
+        # ⬇️ coverage
+        self._ensure_coverage_layer()
+        if getattr(self, "_cov_img", None) is None:
+            return
+
+        x, y = position.x(), position.y()
+
+        # promień pędzla: weź z configu, a jak brak – z rozmiaru 'rect' gracza
+        r = getattr(self, "_brush_radius_px", 5)
+        if r <= 0:
+            r = int(max(rect.width(), rect.height()) * 0.5) or 10
+
+        # clipping (nie rysuj poza obraz)
+        if not (0 <= x < self._cov_img.width() and 0 <= y < self._cov_img.height()):
+            return
+
+        # Rysowanie do bufora (szybko + bez tworzenia nowych itemów)
+        p = QPainter(self._cov_img)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(self._brush_color)
+        p.drawEllipse(position, 4, 4)  # QPointF w scenie == piksele obrazu maski
+        p.end()
+
+        # Zaktualizuj pikselmapę (możesz też zoptymalizować podając brudny rect)
+        self._cov_item.setPixmap(QPixmap.fromImage(self._cov_img))
 
     def center_map_on_player(self, position: QPointF) -> None:
         self.view.centerOn(position)
@@ -177,3 +213,31 @@ class MapWindow(QMainWindow):
     def _on_deed_marker_tick(self, marker_id: str, ttl_sec: int):
         if marker_id in self.ui_markers:
             self.ui_markers[marker_id]["text"].setPlainText(f"{ttl_sec // 60}:{ttl_sec % 60:02}")
+
+    def _on_resource_claimed(self):
+        print()
+
+    def _ensure_coverage_layer(self):
+        if getattr(self, "_cov_img", None) is not None:
+            return
+
+        # upewnij się, że znamy rozmiar mapy
+        w = getattr(self, "map_width", int(self.scene.sceneRect().width()))
+        h = getattr(self, "map_height", int(self.scene.sceneRect().height()))
+        if w <= 0 or h <= 0:
+            return  # jeszcze za wcześnie (brak kafli)
+
+        # półprzezroczysta maska RGBA (pusta)
+        self._cov_img = QImage(w, h, QImage.Format.Format_ARGB32_Premultiplied)
+        self._cov_img.fill(Qt.GlobalColor.transparent)
+
+        # Item pokazujący maskę (na szczycie)
+        self._cov_item = QGraphicsPixmapItem(QPixmap.fromImage(self._cov_img))
+        self._cov_item.setPos(0, 0)
+        self._cov_item.setZValue(10_000)  # nad markerami i mapą
+        self._cov_item.setOpacity(0.35)  # ogólna przezroczystość
+        self.scene.addItem(self._cov_item)
+
+        # „pędzel” – promień w pikselach sceny
+        self._brush_radius_px = int(self.config.get("coverage", {}).get("brush_radius_px", 14))
+        self._brush_color = QColor(32, 160, 255, 110)  # niebieski półprzezr.

@@ -34,11 +34,11 @@ class ChatLogListener(QObject):
     def _emit_by_channel(self, channel: str, line: str) -> None:
         """Emit signal depending on channel."""
         if channel.lower() == "system":
-            self.system_event.emit(line)
-        elif channel.lower() == "globals":
-            self.globals_event.emit(line)
-        else:
-            self.other_event.emit(line)
+            self.bus.system_event.emit(line)
+        # elif channel.lower() == "globals":
+        #     self.globals_event.emit(line)
+        # else:
+        #     self.other_event.emit(line)
 
     def _worker(self) -> None:
         try:

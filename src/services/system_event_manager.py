@@ -13,3 +13,7 @@ class SystemEventManager(QObject):
     def _on_system(self, text: str) -> None:
         if "resource is depleted" in text.lower():
                 self.bus.resource_depleted.emit(text)
+        if "You have claime a resource!" in text.lower():
+            # Extract resource name
+            resource_name = text.split("You have claime a resource! ")[-1].strip()
+            self.bus.resource_claimed.emit(resource_name)

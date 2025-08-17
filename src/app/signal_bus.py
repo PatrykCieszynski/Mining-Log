@@ -4,9 +4,10 @@ from src.models.deed_model import DeedModel
 class SignalBus(QObject):
     # Chat / System
     system_event = pyqtSignal(str)           # raw system line
-    globals_event = pyqtSignal(str)  # whole message from [Globals]
-    other_event = pyqtSignal(str)    # other channels
+    # globals_event = pyqtSignal(str)  # whole message from [Globals]
+    # other_event = pyqtSignal(str)    # other channels
     resource_depleted = pyqtSignal(str)      # filtered system event
+    resource_claimed = pyqtSignal(str)       # filtered system event
 
     # Scanners / OCR
     deed_found = pyqtSignal(DeedModel)       # new deed extracted
